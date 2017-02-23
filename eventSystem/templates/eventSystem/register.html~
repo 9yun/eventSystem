@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>Register Please</title>
+    <h1>Join Us!</h1>
+  </head>
+  <body style='margin:auto;width:50%;text-align:center'>
+    <form method="post">
+      {% csrf_token %}
+      <div>
+	Username <input type="text" name="username" value="">
+      </div>
+      <div>
+	Email\t<input type="text" name="email" value="">
+      </div>
+      <div>
+	Password <input type="text" name="password" value="">
+      </div>
+      <button type="Submit">Submit</button>
+    </form>
+    <p>Already have an account? <a href="/eventSystem/login">Login!</a></p>
+  </body>
+</html>
