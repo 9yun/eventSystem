@@ -1,0 +1,47 @@
+<html>
+  <head>
+    <title>{{ user.username }} | eventSystem</title>
+    <h1>Username: {{ user.username }}</h1>
+    <h3>Email: {{ user.email }}</h3>
+  </head>
+  
+<body>
+{% if owns_events %}
+<p>Events you own:</p>
+<ul>
+  {% for event in owned_events %}
+  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
+  {% endfor %}
+</ul>
+
+{% else %}
+<p>You don't own any events currently.</p>
+
+{% endif %}
+
+{% if has_vendor_events %}
+  <p>You are a vendor for:</p>
+  <ul>
+    {% for event in vendor_events %}
+      <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+<p>You are not a vendor for any events</p>
+{% endif %}
+
+{% if has_guest_events %}
+<p>You are a guest for:</p>
+<ul>
+  {% for event in guest_events %}
+  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }\
+      }</a> at {{ event.date_time }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>You are not a guest for any events</p>
+{% endif %}
+
+
+</body>
+</html>

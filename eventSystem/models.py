@@ -12,10 +12,10 @@ class User(models.Model):
     def isOwnerOf(self):
         return Event.objects.has_owner(self)
     
-    def isVendorOr(self):
+    def isVendorOf(self):
         return Event.objects.has_vendor(self)
     
-    def ifGuestOf(self):
+    def isGuestOf(self):
         return Event.objects.has_guest(self)
     
     def createEvent(self, eventName, dateTime):
@@ -57,5 +57,14 @@ class Event(models.Model):
 
     def addGuest(self, user):
         self.guests.add(user)
+
+    def getOwners(self):
+        return self.owners.all()
+
+    def getVendors(self):
+        return self.vendors.all()
+
+    def getGuests(self):
+        return self.guests.all()
 
     
