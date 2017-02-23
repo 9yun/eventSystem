@@ -3,8 +3,9 @@
 <head>
   <title>Events Unlimited | Login</title>
   {% load static %}
-  <link rel="stylesheet" href="{% static " login/css/login.css " %}">
+  <link rel="stylesheet" href="{% static "login/css/login.css" %}">
   <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'> {% load static %}
+  <script src="{% static "login/js/slideshow.js" %}" type="text/javascript" defer></script>
 </head>
 
 <body>
@@ -44,26 +45,6 @@
     </div>
 
   </form>
-
-  <script type="text/javascript">
-    var slideIndex = 0;
-    carousel();
-
-    function carousel() {
-      var i;
-      var x = document.getElementsByClassName("wallpaper");
-      for (i = 0; i < x.length; i++) {
-        x[i].style.display = "none";
-      }
-      slideIndex++;
-      if (slideIndex > x.length) {
-        slideIndex = 1
-      }
-      x[slideIndex - 1].style.display = "block";
-      setTimeout(carousel, 2000); // Change image every 2 seconds
-    }
-  </script>
-
 </body>
 
 </html>
