@@ -57,9 +57,9 @@
 /* Fading animation */
 .fade {
   -webkit-animation-name: fade;
-  -webkit-animation-duration: 1.5s;
+  -webkit-animation-duration: 3s;
   animation-name: fade;
-  animation-duration: 1.5s;
+  animation-duration: 3s;
 }
 
 @-webkit-keyframes fade {
@@ -106,8 +106,9 @@ button {
 }
 
 img.wallpaper {
-    width: 40%;
+    width: 50%;
     border-radius: 50%;
+    margin: auto;
 }
 
 .input_container {
