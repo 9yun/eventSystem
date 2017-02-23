@@ -7,9 +7,12 @@ from django.contrib.auth.models import User as auth_user
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.utils import IntegrityError
+from django.db.models import DateTimeField
 from django.contrib.auth.decorators import login_required
 
-from .models import User, Event
+from django.utils import timezone
+
+from .models import User, Event, EventForm
 
 # Create your views here.
 
@@ -55,8 +58,6 @@ def user_login(request):
         print("GET request detected!")
         return render(request, 'eventSystem/login.html', {})
 
-    # Enforce login_required decorator
-
 @login_required    
 def user_home(request, username):
     # Retrieve user from DB
@@ -76,15 +77,40 @@ def user_home(request, username):
     return render(request, 'eventSystem/user_home.html', context)
 
 @login_required # TO-DO: Also need to enforce either owner or vendor?
+# This view is only meant to be accessible to owner of that event
 def event_home(request, eventname):
     eventSet = Event.objects.filter(eventname = eventname)
     if len(eventSet) == 0:
         raise Http404("Event does not exist")
     event = eventSet[0]
     event_owners = event.getOwners()
+    event_owners_names = [owner.username for owner in event_owners]
+    print("Owners: " + str(event_owners_names))
+    if request.user.username not in event_owners_names: # User is not owner of this event, cannot view its homepage, only other pages like guest view or vendor view of event
+        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
     event_vendors = event.getVendors()
     event_guests = event.getGuests()
     has_vendors = len(event_vendors) > 0
     has_guests = len(event_guests) > 0
     context = {'event_name' : event.eventname, 'date_time' : event.date_time,  'event_owners' : event_owners, 'event_vendors' : event_vendors, 'event_guests' : event_guests, 'has_vendors' : has_vendors, 'has_guests' : has_guests}
     return render(request, 'eventSystem/event_home.html', context)
+
+@login_required
+def create_event(request, username):
+    #return HttpResponse("Your event creation form is coming soon!")
+    if request.method == "POST":
+        print("Post detected to event creation")
+        newEventForm = EventForm(request.POST)
+        if not newEventForm.is_valid():
+            print("Invalid event!")
+            return redirect(create_event, username=username)
+        print("Valid event!")
+        creator = User.objects.filter(username = username)[0] # Safe to assume at this point that a user will be found since login_required decorator has been enforced
+        newEvent = newEventForm.save()
+        print("Saved event!")
+        newEvent.addOwner(creator)
+        return redirect(user_home, username=username)
+    else:
+        form = EventForm({})
+        context = {'username' : username, 'form': form}
+        return render(request, 'eventSystem/create_event.html', context)

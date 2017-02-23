@@ -1,10 +1,13 @@
 from django.db import models
+#from django import forms
+from django.forms import ModelForm
+
 import datetime
 
 # Create your models here.
 class User(models.Model):
-    username = models.CharField(max_length = 50)
-    email = models.EmailField(max_length = 100, blank = False, error_messages={'required': 'Please provide your email address.'}) # Validation doesn't quite seem to work yet
+    username = models.CharField(max_length = 50, unique = True, error_messages={'required': 'Please provide a unique username'})
+    email = models.EmailField(max_length = 100, unique = True, blank = False, error_messages={'required': 'Please provide your email address.'}) # Validation doesn't quite seem to work yet
 
     def __str__(self):
         return self.username
@@ -38,7 +41,7 @@ class EventManager(models.Manager):
         return [e for e in self.all() if user in e.guests.all()]
            
 class Event(models.Model):
-    eventname = models.CharField(max_length = 100)
+    eventname = models.CharField(max_length = 100, unique = True)
     date_time = models.DateTimeField('when')
     owners = models.ManyToManyField(User, related_name="owners")
     vendors = models.ManyToManyField(User, related_name="vendors")
@@ -67,4 +70,9 @@ class Event(models.Model):
     def getGuests(self):
         return self.guests.all()
 
-    
+class EventForm(ModelForm):
+    eventname = models.CharField(max_length = 100, help_text = "Please choose a unique name for your event")
+    date_time = models.DateTimeField(help_text = "When should the event take place")
+    class Meta:
+        model = Event
+        fields = ['eventname', 'date_time'] # TO-DO: Add questions
