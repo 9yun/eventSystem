@@ -1,0 +1,33 @@
+<html>
+  <head style='margin:auto; width:50%; text-align:center;'>
+    <title>Event | {{ event_name }} | eventSystem</title>
+    <h1>Event Name: {{ event_name }}</h1>
+    <h3>Date & Time: {{ date_time }}</h3>
+  </head>
+<body>
+<p>Owners:</p>
+<ul>
+{% for owner in event_owners %}
+<li><a href="{% url 'user_home' owner.username %}">{{ owner.username }}</a></li>
+{% endfor %}
+</ul>
+
+{% if has_vendors%}
+<p>Vendors:</p>
+<ul>
+  {% for vendor in event_vendors %}
+  <li><a href="{% url 'user_home' owner.username %}">{{ vendor.username }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if has_guests %}
+<p>Guests:</p>
+<ul>
+  {% for guest in event_guests %}
+  <li><a href="{% url 'user_home' owner.username %}">{{ guest.username }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+</body>
+</html>
