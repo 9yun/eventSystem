@@ -62,5 +62,15 @@
   </div>
   </div>
 
+  {% if messages %}
++    <div style="color:red">
++      {% for message in messages %}
++      <div class="alert alert-{{ message.tags }}">
++	{{ message|safe }}
++      </div>
++      {% endfor %}
++    </div>
++    {% endif %}
+
 </body>
 </html>
