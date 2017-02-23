@@ -6,7 +6,7 @@ import datetime
 
 # Create your models here.
 class User(models.Model):
-    username = models.CharField(max_length = 50, unique = True, error_messages={'required': 'Please provide a unique username'})
+    username = models.CharField(max_length = 50, unique = True, blank = False, error_messages={'required': 'Please provide a unique username'})
     email = models.EmailField(max_length = 100, unique = True, blank = False, error_messages={'required': 'Please provide your email address.'}) # Validation doesn't quite seem to work yet
 
     def __str__(self):

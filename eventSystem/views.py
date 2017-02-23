@@ -9,12 +9,11 @@ from django.core.validators import validate_email
 from django.db.utils import IntegrityError
 from django.db.models import DateTimeField
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 from django.utils import timezone
 
 from .models import User, Event, EventForm
-
-# Create your views here.
 
 @login_required
 def index(request):
@@ -25,6 +24,10 @@ def user_reg(request):
         username = request.POST['username']
         email = request.POST['email']
         password = request.POST['password']
+        if len(password) < 6:
+            print("Password too short!")
+            messages.error(request, "Password is too short! For your own safety, please pick a stronger password.")
+            return redirect('user_reg')
         try:
             newUser = auth_user.objects.create_user(username, email, password)
             validate_email(email)
@@ -32,10 +35,15 @@ def user_reg(request):
             print("Success!")
         except ValidationError: #Invalid Email
             print("Invalid Email!")
-            return HttpResponse("Invalid Email! Please try again with a different email!")
+            messages.error(request, "Invalid Email! Please try again with a different email!")
+            return redirect('user_reg')
         except IntegrityError: #Username already exists
             print("Username exists!")
-            return HttpResponse("Sorry, that username is taken. Please try again with a different username!")
+            messages.error(request, "Sorry, that username is taken. Please try again with a different username!")
+            return redirect('user_reg')
+        except ValueError: #Blank Username
+            messages.error(request, "All fields have to be non-empty")
+            return redirect('user_reg')
         return redirect('user_home', username=username)
     else:
         return render(request, 'eventSystem/register.html', {})
@@ -50,10 +58,11 @@ def user_login(request):
         if user is not None:
             login(request, user) # sets User ID in session
             print("Request object: " + str(request))
-            #return HttpResponse("Booya! Login success!")
-            return redirect('user_home', username=username) 
+            return redirect('user_home', username=username)
         else:
-            return HttpResponse("Dang! Login failed!") # TO-DO: Replace with in-line error message in template?
+            messages.error(request, "Invalid credentials")
+            return redirect(user_login)
+            #return HttpResponse("Dang! Login failed!") # TO-DO: Replace with in-line error message in template?
     else:
         print("GET request detected!")
         return render(request, 'eventSystem/login.html', {})
@@ -97,12 +106,12 @@ def event_home(request, eventname):
 
 @login_required
 def create_event(request, username):
-    #return HttpResponse("Your event creation form is coming soon!")
     if request.method == "POST":
         print("Post detected to event creation")
         newEventForm = EventForm(request.POST)
         if not newEventForm.is_valid():
             print("Invalid event!")
+            messages.error(request, "Invalid Event! Please try different event name and enter date in valid format such as MM/DD/YY HH:MM:SS")
             return redirect(create_event, username=username)
         print("Valid event!")
         creator = User.objects.filter(username = username)[0] # Safe to assume at this point that a user will be found since login_required decorator has been enforced

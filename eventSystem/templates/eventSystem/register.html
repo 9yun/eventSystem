@@ -18,5 +18,14 @@
       <button type="Submit">Submit</button>
     </form>
     <p>Already have an account? <a href="/eventSystem/login">Login!</a></p>
+    {% if messages %}
+      <div style="color:red">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">
+	  {{ message|safe }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
   </body>
 </html>
