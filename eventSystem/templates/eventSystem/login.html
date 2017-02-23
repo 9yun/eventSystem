@@ -3,26 +3,43 @@
 <head>
   <title>Events Unlimited | Login</title>
   {% load static %}
-  <link rel="stylesheet" href="{% static "login/css/login.css" %}">
-  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'>
-  {% load static %}
-  <script type="text/javascript" src="{% static "login/js/slideshow.js" %}"></script>
+  <link rel="stylesheet" href="{% static " login/css/login.css " %}">
+  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'> {% load static %}
 </head>
 
 <body>
   <!-- Slideshow -->
   <div class="login_slideshow_container">
-      {% load static %}
-      <img src="{% static "login/slideshow/login_wallpaper_1.jpeg" %}" alt="Wedding Event" class="wallpaper">
-      {% load static %}
-      <img src="{% static "login/slideshow/login_wallpaper_2.jpeg" %}" alt="Wedding Event" class="wallpaper">
-      {% load static %}
-      <img src="{% static "login/slideshow/login_wallpaper_3.jpeg" %}" alt="Wedding Event" class="wallpaper">
-      {% load static %}
-      <img src="{% static "login/slideshow/login_wallpaper_4.jpeg" %}" alt="Wedding Event" class="wallpaper">
+    {% load static %}
+    <img src="{% static " login/slideshow/login_wallpaper_1.jpeg " %}" alt="Wedding Event" class="wallpaper"> {% load static
+    %}
+    <img src="{% static " login/slideshow/login_wallpaper_2.jpeg " %}" alt="Wedding Event" class="wallpaper"> {% load static
+    %}
+    <img src="{% static " login/slideshow/login_wallpaper_3.jpeg " %}" alt="Wedding Event" class="wallpaper"> {% load static
+    %}
+    <img src="{% static " login/slideshow/login_wallpaper_4.jpeg " %}" alt="Wedding Event" class="wallpaper">
   </div>
   <br>
-  
+
+  <script type="text/javascript">
+    var slideIndex = 0;
+    carousel();
+
+    function carousel() {
+      var i;
+      var x = document.getElementsByClassName("wallpaper");
+      for (i = 0; i < x.length; i++) {
+        x[i].style.display = "none";
+      }
+      slideIndex++;
+      if (slideIndex > x.length) {
+        slideIndex = 1
+      }
+      x[slideIndex - 1].style.display = "block";
+      setTimeout(carousel, 2000); // Change image every 2 seconds
+    }
+  </script>
+
   <form method="post">
     {% csrf_token %}
     <!-- Login forms -->
@@ -40,9 +57,9 @@
     </div>
 
     <div class="input_container">
-    <form action="/eventSystem/register">
-      <input type="submit" value="Need an Account?" class="fancy create_account"/>
-    </form>
+      <form action="/eventSystem/register">
+        <input type="submit" value="Need an Account?" class="fancy create_account" />
+      </form>
     </div>
 
   </form>

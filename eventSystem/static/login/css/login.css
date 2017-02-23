@@ -1,12 +1,11 @@
 /* Slideshow */
 
-/*
+
 .login_slideshow_container {
   max-width: 1000px;
   position: relative;
   margin: auto;
 }
-*/
 
  /* Bordered form */
 form {
@@ -41,12 +40,10 @@ button {
     width: 60%;
 }
 
-/*
 img.wallpaper {
     width: 40%;
     border-radius: 50%;
 }
-*/
 
 .input_container {
     padding: 20px;
