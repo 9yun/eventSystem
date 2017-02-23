@@ -29,8 +29,16 @@
       <img src="{% static "login/slideshow/login_wallpaper_4.jpeg" %}" alt="Wedding Event" class="wallpaper">
     </div>
   </div>
-  <br>
 
+  <!-- Title -->
+  <div class="title">
+    <h1>Events Unlimited</h1>
+  </div>
+  <div class="slogan">
+      <p>"Because in your dreams, <i>every</i> detail matters"</p>
+  </div>
+
+  <div class="forms">
   <form method="post">
     {% csrf_token %}
     <!-- Login forms -->
@@ -47,11 +55,12 @@
       <button type="Submit" class="fancy_text_small">Login</button>
     </div>
   </form>
-    <div class="input_container">
-      <form action="/eventSystem/register">
-        <input type="submit" value="Need an Account?" class="fancy create_account" />
-      </form>
-    </div>
+  <div class="input_container">
+    <form action="/eventSystem/register">
+      <input type="submit" value="Need an Account?" class="fancy create_account" />
+    </form>
+  </div>
+  </div>
 
 </body>
 
