@@ -106,8 +106,8 @@ button {
 }
 
 img.wallpaper {
-    width: 70%;
-    border-radius: 10%;
+    width: 100%;
+    border-radius: 20%;
 }
 
 .input_container {
