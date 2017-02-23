@@ -13,16 +13,20 @@
   <!-- Slideshow -->
   <div class="login_slideshow_container">
     <div class="slides slide_fade">
-      <img src="slideshow/login_wallpaper_1.jpeg" alt="Wedding Event" class="wallpaper">
+      {% load static %}
+      <img src="{% static "login/slideshow/login_wallpaper_1.jpeg" %}" alt="Wedding Event" class="wallpaper">
     </div>
     <div class="slides slide_fade">
-      <img src="slideshow/login_wallpaper_2.jpeg" alt="Wedding Event" class="wallpaper">
+      {% load static %}
+      <img src="{% static "login/slideshow/login_wallpaper_2.jpeg" %}" alt="Wedding Event" class="wallpaper">
     </div>
     <div class="slides slide_fade">
-      <img src="slideshow/login_wallpaper_3.jpeg" alt="Wedding Event" class="wallpaper">
+      {% load static %}
+      <img src="{% static "login/slideshow/login_wallpaper_3.jpeg" %}" alt="Wedding Event" class="wallpaper">
     </div>
     <div class="slides slide_fade">
-      <img src="slideshow/login_wallpaper_4.jpeg" alt="Wedding Event" class="wallpaper">
+      {% load static %}
+      <img src="{% static "login/slideshow/login_wallpaper_4.jpeg" %}" alt="Wedding Event" class="wallpaper">
     </div>
     <a class="prev_arrow" onclick="plusSlides(-1)">&#10094;</a>
     <a class="next_arrow" onclick="plusSlides(1)">&#10095;</a>
