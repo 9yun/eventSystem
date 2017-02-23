@@ -53,13 +53,11 @@
       <input type="password" placeholder="Enter Password" name="password" class="fancy">
       
       {% if messages %}
-        <div style="color:red">
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }}">
 	    {{ message|safe }}
         </div>
         {% endfor %}
-        </div>
       {% endif %}
 
       <button type="Submit" class="fancy_text_small">Login</button>
