@@ -1,19 +1,62 @@
 <html>
-  <head>
-    <title>Login | eventSystem</title>
-    <h1>Please Log-In!</h1>
-  </head>
-  <body style='margin:auto;width:50%;text-align:center;'>
-    <form method="post">
-      {% csrf_token %}
-      <div>
-	Username<input type="text" name="username" value="">
+
+<head>
+  <title>Events Unlimited | Login</title>
+  <link rel="stylesheet" href="css/login.css">
+  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'>
+  <script type="text/javascript" src="js/slideshow.js"></script>
+</head>
+
+<body>
+  <!-- Slideshow -->
+  <div class="login_slideshow_container">
+    <div class="slides slide_fade">
+      <img src="slideshow/login_wallpaper_1.jpeg" alt="Wedding Event" class="wallpaper">
+    </div>
+    <div class="slides slide_fade">
+      <img src="slideshow/login_wallpaper_2.jpeg" alt="Wedding Event" class="wallpaper">
+    </div>
+    <div class="slides slide_fade">
+      <img src="slideshow/login_wallpaper_3.jpeg" alt="Wedding Event" class="wallpaper">
+    </div>
+    <div class="slides slide_fade">
+      <img src="slideshow/login_wallpaper_4.jpeg" alt="Wedding Event" class="wallpaper">
+    </div>
+    <a class="prev_arrow" onclick="plusSlides(-1)">&#10094;</a>
+    <a class="next_arrow" onclick="plusSlides(1)">&#10095;</a>
+  </div>
+  <br>
+
+  <div style="text-align:center">
+    <span class="dot" onclick="currentSlide(1)"></span>
+    <span class="dot" onclick="currentSlide(2)"></span>
+    <span class="dot" onclick="currentSlide(3)"></span>
+    <span class="dot" onclick="currentSlide(4)"></span>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <!-- Login forms -->
+    <div class="input_container">
+      <div class="fancy_text">
+        <label><b>Username</b></label>
       </div>
-      <div>
-	Password<input type="text" name="password" value="">
+      <input type="text" placeholder="Enter Username" name="username" class="fancy">
+      <div class="fancy_text">
+        <label><b>Password</b></label>
       </div>
-      <button type="Submit">Submit</button>
+      <input type="password" placeholder="Enter Password" name="password" class="fancy">
+
+      <button type="Submit" class="fancy_text_small">Login</button>
+    </div>
+
+    <div class="input_container">
+    <form action="/eventSystem/register">
+      <input type="submit" value="Need an Account?" class="fancy create_account"/>
     </form>
-    <p>New to eventSystem? <a href="/eventSystem/register">Register!</a></p>
-  </body>
+    </div>
+
+  </form>
+</body>
+
 </html>

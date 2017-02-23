@@ -3,7 +3,7 @@
     <title>Login | eventSystem</title>
     <h1>Please Log-In!</h1>
   </head>
-  <body style='margin:auto;width:50%'>
+  <body style='margin:auto;width:50%;text-align:center;'>
     <form method="post">
       {% csrf_token %}
       <div>
