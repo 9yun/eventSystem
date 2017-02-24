@@ -7,7 +7,7 @@
   
 <body>
 {% if owns_events %}
-<p>Events you own:</p>
+<p>Events owned by {{ noun }}:</p>
 <ul>
   {% for event in owned_events %}
   <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
@@ -15,34 +15,35 @@
 </ul>
 
 {% else %}
-<p>You don't own any events currently.</p>
+<p>No events currently owned by {{ noun }}</p>
 
 {% endif %}
 
 {% if has_vendor_events %}
-  <p>You are a vendor for:</p>
+  <p>Vendor for:</p>
   <ul>
     {% for event in vendor_events %}
       <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
     {% endfor %}
   </ul>
 {% else %}
-<p>You are not a vendor for any events</p>
+<p>Not a vendor for any events</p>
 {% endif %}
 
 {% if has_guest_events %}
-<p>You are a guest for:</p>
+<p>Guest for:</p>
 <ul>
   {% for event in guest_events %}
-  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }\
-      }</a> at {{ event.date_time }}</li>
+  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
   {% endfor %}
 </ul>
 {% else %}
-<p>You are not a guest for any events</p>
+<p>Not a guest for any events</p>
 {% endif %}
 
-<p><a href="{% url 'create_event' user.username %}">Create an event</a></p>
-
+{% if noun == "You" %}
+  <p><a href="{% url 'create_event' user.username %}">Create an event</a></p>
+  <p><a href="{%url 'user_logout' %}">Logout</a></p>
+{% endif %}
 </body>
 </html>

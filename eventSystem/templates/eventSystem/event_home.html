@@ -16,7 +16,7 @@
   <p>Vendors:</p>
   <ul>
   {% for vendor in event_vendors %}
-    <li><a href="{% url 'user_home' owner.username %}">{{ vendor.username }}</a></li>
+    <li><a href="{% url 'user_home' vendor.username %}">{{ vendor.username }}</a></li>
   {% endfor %}
   </ul>
 {% else %}
@@ -27,11 +27,15 @@
   <p>Guests:</p>
   <ul>
   {% for guest in event_guests %}
-    <li><a href="{% url 'user_home' owner.username %}">{{ guest.username }}</a></li>
+    <li><a href="{% url 'user_home' guest.username %}">{{ guest.username }}</a></li>
   {% endfor %}
   </ul>
 {% else %}
   <p>This event has no guests</p>
 {% endif %}
+
+<p><a href="{% url 'modify_event' event_name %}">Modify {{ event_name }}</a></p>
+
+
 </body>
 </html>

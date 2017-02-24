@@ -1,17 +1,17 @@
 <html>
   <head>
-    <title>Create Event | eventSystem</title>
-    <h1>New Event for {{ username }}</h1>
+    <title>Modify Event | eventSystem</title>
+    <h1>Event {{ event.eventname }} for {{ user.username }}</h1>
   </head>
   <body>
     <form method="post">
       {% csrf_token %}
       {% for field in form %}
       <div>
-	{{ field.name }}{{ field }}
+       {{ field.name }}{{ field }}
       </div>
-      {% endfor %}
-      <button type="Submit">Create!</button>
+       {% endfor %}
+      <button type="Submit">Modify</button>
     </form>
     {% if messages %}
     <div style="color:red">
