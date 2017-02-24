@@ -1,28 +1,74 @@
 <html>
-  <head>
-    <title>Login | eventSystem</title>
-    <h1>Please Log-In!</h1>
-  </head>
-  <body style='margin:auto;width:50%;text-align:center;'>
-    <form method="post">
-      {% csrf_token %}
-      <div>
-	Username<input type="text" name="username" value="">
-      </div>
-      <div>
-	Password<input type="text" name="password" value="">
-      </div>
-      <button type="Submit">Submit</button>
-    </form>
-    <p>New to eventSystem? <a href="/eventSystem/register">Register!</a></p>
-    {% if messages %}
-    <div style="color:red">
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">
-	{{ message|safe }}
-      </div>
-      {% endfor %}
+
+<head>
+  <title>Events Unlimited | Login</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static "login/css/login.css" %}">
+  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'> 
+  {% load static %}
+  <script src="{% static "login/js/slideshow.js" %}" type="text/javascript" defer></script>
+</head>
+
+<body>
+  <!-- Slideshow -->
+  <div class="slideshow_container">
+      <div class="slides fade">
+      {% load static %}
+      <img src="{% static "login/slideshow/login_wallpaper_1.jpeg" %}" alt="Wedding Event" class="wallpaper"> 
     </div>
-    {% endif %}
+      <div class="slides fade">
+      {% load static %}
+      <img src="{% static "login/slideshow/login_wallpaper_2.jpeg" %}" alt="Wedding Event" class="wallpaper"> 
+    </div>
+      {% load static %}
+      <div class="slides fade">
+      <img src="{% static "login/slideshow/login_wallpaper_3.jpeg" %}" alt="Wedding Event" class="wallpaper">
+    </div>
+      {% load static %}
+      <div class="slides fade">
+      <img src="{% static "login/slideshow/login_wallpaper_4.jpeg" %}" alt="Wedding Event" class="wallpaper">
+    </div>
+  </div>
+
+  <!-- Title -->
+  <div class="title">
+    <h1>Events Unlimited</h1>
+  </div>
+  <div class="slogan">
+      <p>"Because in your dreams, <i>every</i> detail matters"</p>
+  </div>
+
+  <div class="forms">
+  <form method="post">
+    {% csrf_token %}
+    <!-- Login forms -->
+    <div class="input_container">
+      <div class="fancy_text">
+        <label><b>Username</b></label>
+      </div>
+      <input type="text" placeholder="Enter Username" name="username" class="fancy">
+      <div class="fancy_text">
+        <label><b>Password</b></label>
+      </div>
+      <input type="password" placeholder="Enter Password" name="password" class="fancy">
+      
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+	    {{ message|safe }}
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <button type="Submit" class="fancy_text_small">Login</button>
+    </div>
+  </form>
+  <div class="input_container">
+    <form action="/eventSystem/register">
+      <input type="submit" value="Need an Account?" class="fancy create_account" />
+    </form>
+  </div>
+  </div>
+
   </body>
 </html>
