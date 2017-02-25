@@ -45,11 +45,11 @@
         <div class="fancy_text">
           <label><b>Username</b></label>
         </div>
-        <input type="text" placeholder="Enter Username" name="username" class="fancy">
+        <input type="text" placeholder="Enter Username" name="username" class="fancy" required>
         <div class="fancy_text">
           <label><b>Password</b></label>
         </div>
-        <input type="password" placeholder="Enter Password" name="password" class="fancy"> 
+        <input type="password" placeholder="Enter Password" name="password" class="fancy" required> 
         {% if messages %} 
           {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
