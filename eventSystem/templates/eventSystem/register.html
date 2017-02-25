@@ -1,31 +1,54 @@
 <html>
-  <head>
-    <title>Register Please</title>
-    <h1>Join Us!</h1>
-  </head>
-  <body style='margin:auto;width:50%;text-align:center'>
-    <form method="post">
-      {% csrf_token %}
-      <div>
-	Username <input type="text" name="username" value="">
+
+<head>
+  <title>Events Unlimited | Register</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static "registration/css/registration.css" %}">
+  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'> {% load static %}
+</head>
+
+<body>
+  <div class="title">
+    <h1>Realize your <i>Dream Event</i> Today!</h1>
+  </div>
+  <img src="{% static "registration/images/registration_1.jpeg" %}" alt="Wedding Event" class="wallpaper">
+  <form method="post">
+    {% csrf_token %}
+    <!-- Login forms -->
+    <div class="input_container">
+      <div class="fancy_text">
+        <label><b>Username</b></label>
       </div>
-      <div>
-	Email    <input type="text" name="email" value="">
+      <input type="text" placeholder="Enter Desired Username" name="username" class="fancy">
+      <div class="fancy_text">
+        <div class="fancy_text">
+          <label><b>Email</b></label>
+        </div>
+        <input type="email" placeholder="Enter Your Email" name="email" class="fancy">
+        <div class="fancy_text">
+          <label><b>Password</b></label>
+        </div>
+        <input type="password" placeholder="Enter Password" name="password" class="fancy">
+        <button type="Submit" class="fancy_text_small">Submit</button>
       </div>
-      <div>
-	Password <input type="text" name="password" value="">
-      </div>
-      <button type="Submit">Submit</button>
+  </form>
+  {% if messages %}
+  <div style="color:red">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+      {{ message|safe }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="slogan">
+    <p>Already have an account?</p>
+  </div>
+  <div class="input_container">
+    <form action="/eventSystem/login/">
+      <input type="submit" value="Login" class="fancy create_account" />
     </form>
-    <p>Already have an account? <a href="/eventSystem/login">Login!</a></p>
-    {% if messages %}
-      <div style="color:red">
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }}">
-	  {{ message|safe }}
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  </body>
+  </div>
+</body>
+
 </html>
