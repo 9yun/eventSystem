@@ -29,6 +29,7 @@ img.wallpaper {
   margin: auto;
   width: 60%;
   border-radius: 70%;
+  max-width: 800px;
 }
 
 .input_container {
