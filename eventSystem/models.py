@@ -1,7 +1,7 @@
 from django.db import models
 from django import forms
 from django.forms import ModelForm
-from django.forms.widgets import CheckboxSelectMultiple
+from django.forms.widgets import CheckboxSelectMultiple, Select
 
 import datetime
 
@@ -76,11 +76,51 @@ class Event(models.Model):
     def update(self, new_info): # new_info is a dictionary object with keys date_time, owners, vendors, guests, questions ?
         [setattr(self, key, new_info[key]) for key in new_info]
     '''
+
+    def get_questions(self):
+        return self.question_set.all()
+
+    # Can be called to figure out who to email if new questions are added
+    def get_all_responders(self):
+        #responders = []
+        return [responder for responder in question.get_responders() for question in self.get_questions()]
+        #return responders
+
+    def get_all_responder_emails(self):
+        return [user.email for user in self.get_all_responders()]
+    
     def addUsers(self, newUsers): # newUsers is a dict of {'new_owners':[...], 'new_vendors':[...], 'new_guests':[...]}
         [self.addOwner(new_owner) for new_owner in newUsers['new_owners']]
         [self.addVendor(new_vendor) for new_vendor in newUsers['new_vendors']]
         [self.addGuest(new_guest) for new_guest in newUsers['new_guests']]
 
+class Question(models.Model):
+    qn_text = models.CharField(max_length = 200)
+    event_for = models.ForeignKey(Event, on_delete = models.CASCADE)
+
+    def get_responses(self):
+        return self.response_set.all()
+
+    def get_responders(self): # Temp, only tracks if a user responded to this question... does not know if user's choice is affected by modifying options to qn
+        return [response.user_from for response in self.get_responses()]
+        
+class Response(models.Model):
+    qn_for = models.ForeignKey(Question, on_delete = models.CASCADE)
+    user_from = models.ForeignKey(User, on_delete = models.CASCADE)
+    response_value = models.CharField(max_length = 200, blank = False, default="", error_messages={'required': 'Please answer the question'}) # Ok to have this for all types of responses?
+
+    '''
+class OpenResponseForm(ModelForm):
+    response_value = 
+
+class SingleChoiceResponseForm(ModelForm):
+    response_value = models.S
+    
+class MCQResponse(Response):
+    response_value = models.MultipleChoiceField()
+    '''
+    
+# Form Classes
 class MyModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         return obj.username
@@ -95,3 +135,24 @@ class EventForm(ModelForm):
     class Meta:
         model = Event
         fields = ['eventname', 'date_time', 'owners', 'vendors', 'guests'] # TO-DO: Add questions
+
+class OpenResponseForm(ModelForm):
+    response_value = forms.CharField(max_length = 200, help_text = "Please answer the question in under 200 characters")
+    class Meta:
+        #model = OpenResponse
+        model = Response
+        fields = ['response_value']
+        
+class SingleChoiceResponseForm(ModelForm):
+    response_value = forms.ChoiceField(choices = [])
+    class Meta:
+        #model = SingleChoiceResponse
+        model = Response
+        fields = ['response_value']
+
+class MCQResponseForm(ModelForm):
+    response_value = forms.MultipleChoiceField(choices = [])
+    class Meta:
+        #model = MCQResponse
+        model = Response
+        fields = ['response_value']
