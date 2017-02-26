@@ -34,7 +34,7 @@
 .ui-widget-header .ui-state-active {
     border: 1px solid #aaaaaa/*{borderColorActive}*/
     ;
-    background: #2fa2e2/*{bgColorActive}*/
+    background: #5aed42/*{bgColorActive}*/
     url(images/ui-bg_glass_65_ffffff_1x400.png)/*{bgImgUrlActive}*/
     50%/*{bgActiveXPos}*/
     50%/*{bgActiveYPos}*/
@@ -75,7 +75,7 @@
 }
 
 .ui-accordion-header-collapsed {
-    background: #c7e9fc;
+    background: #a8f79b;
 }
 
 
