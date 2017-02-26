@@ -22,7 +22,7 @@ function handleNewFrQ() {
 
     // Question text
     var question_text = document.createElement("label");
-    question_text.innerHTML = "[Your Question Here]";
+    question_text.innerHTML = "[Edit here]";
     question_text.contentEditable = true;
     question_text.className += "fancy_text";
     question_text.style.maxWidth = "800px";
@@ -70,7 +70,7 @@ function handleNewFrQ() {
 }
 
 function handleNewMcQ() {
-
+    alert("Sorry, this is not yet implemented!");
 }
 
 function delete_question(id) {
