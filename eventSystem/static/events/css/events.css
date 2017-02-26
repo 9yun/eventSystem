@@ -137,7 +137,7 @@ input.fancy {
 .scroll_check_box_owners {
   border: 3px solid #ccc;
   width: 350px;
-  height: 150px;
+  height: 170px;
   overflow-y: scroll;
   text-align: left;
   margin: auto;
@@ -146,7 +146,7 @@ input.fancy {
 .scroll_check_box_vendors {
   border: 3px solid #ccc;
   width: 350px;
-  height: 250px;
+  height: 270px;
   overflow-y: scroll;
   text-align: left;
   margin: auto;
@@ -171,4 +171,14 @@ input.cancel {
   margin: 4px 0;
   cursor: pointer;
   width: 30%;
+}
+
+input.new_question {
+  position: relative;
+  background-color: #e5b66b;
+  color: #2f2f2f;
+  padding: 10px 10px;
+  margin: 4px 50px;;
+  cursor: pointer;
+  max-width: 330px;
 }
