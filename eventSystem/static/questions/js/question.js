@@ -1,6 +1,7 @@
 /* Question Class File */
 
 var __working_question_id = "working_question_id";
+var __working_choices_id = "working_choices_id";
 var __cancel_button_id = "cancel_button_id";
 var __question_div_id = "div_question_";
 var __approved_questions = [];
@@ -12,6 +13,11 @@ function Question(qnText, qnType, Choices, qnNumber) {
     this.qnType = qnType;
     this.Choices = Choices;
     this.qnNumber = qnNumber;
+}
+
+function WorkingMC() {
+    this.qnText = '';
+    this.Choices = [];
 }
 
 function GenOpenQuestionHtml() {
@@ -31,6 +37,9 @@ function GenOpenQuestionHtml() {
 
     // Add the submit button
     var submit = GetSubmitButton();
+    submit.onclick = function () {
+        VerifyOpenQuestion();
+    }
 
     // Add the cancel button
     var cancel = GetCancelButton();
@@ -40,7 +49,7 @@ function GenOpenQuestionHtml() {
             parent.removeChild(parent.firstChild);
         }
     }
-    
+
     // Add to parent
     parent.appendChild(qnumber);
     parent.appendChild(input);
@@ -49,8 +58,101 @@ function GenOpenQuestionHtml() {
 }
 
 function GenChoiceQuestionHtml() {
-    alert("Not ready :)");
     //DisableNewQuestions();
+    var parent = document.getElementById("working_dynamic_question");
+    // Make a working mc object
+    var mco = new WorkingMC();
+
+    // Add question input
+    var input = document.createElement("input");
+    input.type = "text";
+    input.id = __working_question_id;
+    input.placeholder = "Type your multiple choice question";
+    input.style.font = "300 25px/1.3 'Lobster Two', Helvetica, sans-serif";
+
+    // Add the label
+    var qnumber = GetQNumberLabel();
+
+    // Add a div for the working mco
+    var mco_div = document.createElement("div");
+    mco_div.id = __working_choices_id;
+
+    // Add a div for adding choices
+    var nchoice_div = document.createElement("div");
+    nchoice_input = document.createElement("input");
+    nchoice_input.type = "text";
+    nchoice_input.placeholder = "[Choice Text]";
+    nchoice_input.style.position = "inline";
+    nchoice_input.style.font = "300 25px/1.3 'Lobster Two', Helvetica, sans-serif";
+
+    var submit_nchoice = GetSubmitButton();
+    submit_nchoice.value = "Add Choice";
+    submit_nchoice.style.background = "#ef6837"
+    submit_nchoice.onclick = function() {
+        if (nchoice_input.value == '') {
+            return;
+        }
+        // Make a div
+        var tmp = document.createElement("div");
+
+        // Radio button
+        var text = nchoice_input.value;
+        mco.Choices.push(text);
+        var final_choice = document.createElement("input");
+        final_choice.type = "radio";
+        final_choice.disabled = true;
+        tmp.appendChild(final_choice);
+        // Radio button label
+        var final_choice_label = document.createElement("label");
+        final_choice_label.innerHTML = text;
+        final_choice_label.style.font = "300 25px/1.3 'Lobster Two', Helvetica, sans-serif";
+        final_choice_label.style.marginLeft = "20px";
+        final_choice_label.style.marginRight = "20px";
+        tmp.appendChild(final_choice_label);
+        // Add a delete button
+        var final_choice_del = GetSubmitButton();
+        final_choice_del.value = "Delete";
+        final_choice_del.style.background = "lightcoral";
+        final_choice_del.onclick = function() {
+            // remove from list
+            var index = mco.Choices.indexOf(text);
+            if (index > -1) {
+                mco.Choices.splice(index, 1);
+             }
+             // Remove html
+             mco_div.removeChild(tmp);
+        }
+        tmp.appendChild(final_choice_del);
+        tmp.appendChild(GetBreak());
+        mco_div.appendChild(tmp);
+        nchoice_input.value = '';
+        num_working_mc_choices++;
+    }
+    nchoice_div.appendChild(nchoice_input);
+    nchoice_div.appendChild(submit_nchoice);
+
+    // Add the submit button
+    var submit = GetSubmitButton();
+    submit.onclick = function () {
+        VerifyChoiceQuestion(mco);
+    }
+
+    // Add the cancel button
+    var cancel = GetCancelButton();
+    cancel.onclick = function () {
+        EnableNewQuestions();
+        while (parent.firstChild) {
+            parent.removeChild(parent.firstChild);
+        }
+    }
+
+    // Add to parent
+    parent.appendChild(qnumber);
+    parent.appendChild(input);
+    parent.appendChild(mco_div);
+    parent.appendChild(nchoice_div);
+    parent.appendChild(submit);
+    parent.appendChild(cancel);
 }
 
 function GetQuestionDiv(num) {
@@ -81,9 +183,6 @@ function GetSubmitButton() {
     submit.style.borderBottomRightRadius = "10px";
     submit.style.borderTopLeftRadius = "10px";
     submit.style.borderTopRightRadius = "10px";
-    submit.onclick = function () {
-        VerifyOpenQuestion();
-    }
     return submit;
 }
 
@@ -146,6 +245,34 @@ function VerifyOpenQuestion() {
     num_total_questions++;
 }
 
+function VerifyChoiceQuestion(mco) {
+    var question = new Question(document.getElementById(__working_question_id).value,
+        'Choice',
+        null,
+        num_total_questions);
+    if (question.qnText == '') {
+        return;
+    }
+    // Check if internal duplicate
+    if (isDuplicate(question.qnText)) {
+        return;
+    }
+    // Check the choices
+    if (mco.Choices.length < 2) {
+        alert("A multiple choice question requires atleast \"2\" choices");
+        return;
+    }
+    for (i = 0; i < mco.Choices.length; i++) {
+        question.Choices.push(mco.Choices[i]);
+    }
+    // TODO: Add AJAX here? Yeah probs
+    __approved_questions.push(question);
+    // Add question to approved questions
+    GenChoiceQuestionFromHtml(question);
+    document.getElementById(__cancel_button_id).click();
+    num_total_questions++;
+}
+
 function DisableNewQuestions() {
     var newOpen = document.getElementById("newOpenQbutton");
     var newChoice = document.getElementById("newChoiceQbutton");
@@ -165,15 +292,15 @@ function EnableNewQuestions() {
 }
 
 function isDuplicate(qnText) {
-   for (i = 0; i < __approved_questions.length; i++) {
-       if (qnText == __approved_questions[i].qnText) {
-           alert("Duplicate question - please submit another");
-           document.getElementById(__working_question_id).value = '';
-           document.getElementById(__working_question_id).placeholder = "Submit a different question";
-           return true;
-       }
-   }
-   return false; 
+    for (i = 0; i < __approved_questions.length; i++) {
+        if (qnText == __approved_questions[i].qnText) {
+            alert("Duplicate question - please submit another");
+            document.getElementById(__working_question_id).value = '';
+            document.getElementById(__working_question_id).placeholder = "Submit a different question";
+            return true;
+        }
+    }
+    return false;
 }
 
 function RenumberQuestions() {
@@ -208,7 +335,7 @@ function GenOpenQuestionFromHtml(question) {
     var question_text = QuestionTextToHtmlLabel(question.qnText);
     // Get Delete button
     var db = GetDeleteButton();
-    db.onclick = function() {
+    db.onclick = function () {
         DeleteQuestion(question);
         num_total_questions--;
         var tmp = JSON.parse(JSON.stringify(__approved_questions));
@@ -220,7 +347,7 @@ function GenOpenQuestionFromHtml(question) {
             GenOpenQuestionFromHtml(__approved_questions[i]);
         }
     }
-    
+
     div.appendChild(label);
     div.appendChild(GetBreak());
     div.appendChild(question_text);
@@ -231,5 +358,33 @@ function GenOpenQuestionFromHtml(question) {
 }
 
 function GenChoiceQuestionFromHtml() {
+    var parent = document.getElementById("okay_dynamic_questions");
+    // Get outer div
+    var div = GetQuestionDiv(question.qnNumber);
+    // Get label
+    var label = GetQNumberLabel(question);
+    // Get Question text
+    var question_text = QuestionTextToHtmlLabel(question.qnText);
+    // Get Delete button
+    var db = GetDeleteButton();
+    db.onclick = function () {
+        DeleteQuestion(question);
+        num_total_questions--;
+        var tmp = JSON.parse(JSON.stringify(__approved_questions));
+        for (i = 0; i < tmp.length; i++) {
+            DeleteQuestion(tmp[i]);
+        }
+        RenumberQuestions();
+        for (i = 0; i < __approved_questions.length; i++) {
+            GenOpenQuestionFromHtml(__approved_questions[i]);
+        }
+    }
 
+    div.appendChild(label);
+    div.appendChild(GetBreak());
+    div.appendChild(question_text);
+    div.appendChild(GetBreak());
+    div.appendChild(db);
+    div.appendChild(GetBreak());
+    parent.appendChild(div);
 }
