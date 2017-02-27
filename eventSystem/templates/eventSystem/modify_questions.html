@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <script src = "/eventSystem/static/questions/js/modify_questions.js"></script>
+    <title>Event | {{ event_name }} | eventSystem</title>
+    <h1>Event Name: {{ event_name }}</h1>
+    <h3>Date & Time: {{ date_time }}</h3>
+  </head>
+  <body>
+    {% if questions %}
+      <p>Current Questions:</p>
+    {% endif %}
+    <ul>  
+      {% for question in questions %}
+        <li>{{ question.qn_text }}</li>
+      {% empty %}
+        <li>This event has no questions so far. Go ahead and create the first ones!</li>
+      {% endfor %}
+    </ul>
+    <p><a href="{% url 'add_questions' event_name %}">Add New Questions</a></p>
+    <p><a href="{% url 'event_home' event_name %}">Back to {{ event_name }}</a></p>
+  </body>
+</html>

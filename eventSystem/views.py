@@ -142,11 +142,65 @@ def create_event(request, username):
         context = {'username' : username, 'form': form}
         return render(request, 'eventSystem/create_event.html', context)
 
+@login_required
 def view_questions(request, eventname):
-    return HttpResponse(content="Coming soon!", status=200)
+    # Must verify that request.user is either in event.owners OR event.vendors
+       # if not in owners and in vendors, then can still view all questions but can only view selected responses?
+    if not (user_owns_event(request, eventname) or user_vendor_for_event(request, username)):
+        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
+    # Event existence and verification of permissions done at this point
+    event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404
+    event_name = event.eventname
+    date_time = event.date_time
+    questions = event.question_set.all()
+    has_questions = len(questions) > 0
+    context = {'event_name': event_name, 'date_time': date_time, 'questions': questions, 'has_questions': has_questions}
+    return render(request, 'eventSystem/view_questions.html', context)
 
+@login_required
+def add_questions(request, eventname):
+    # must be owner of event, not even guest
+    if not user_owns_event(request, eventname):
+        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
+    event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404  
+    if request.method == "POST":
+        # TO-DO : save qns to db... All validation already done on client side?
+        # TO-DO : Iterate through request.POST["questions"], and for each qn, save qn to db with qnText field, then look at qnType field and construct Choice object for saved qn if necessary
+        print("Saving of questions suceeded!")
+        return redirect(view_questions, eventname=eventname)
 
+    else:
+        # Any contextual information needed?
+        event_name = event.eventname
+        date_time = event.date_time
+        questions = event.question_set.all()
+        has_questions = len(questions) > 0
+        context = {'event_name': event_name, 'date_time': date_time, 'questions': questions, 'has_questions': has_questions}                
+        return render(request, 'eventSystem/add_questions.html', context)
 
+def modify_questions(request, eventname):
+    # must be owner of event, not even guest
+    if not user_owns_event(request, eventname):
+        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
+    event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404 
+    if request.method == "POST":
+        # TO-DO : Iterate through request.POST["questions"], and for each qn, save qn to db with qnText field, then look at qnType field and construct Choice object for saved qn if necessary
+        print("Saving of questions suceeded!")
+        return redirect(view_questions, eventname=eventname)
+    else:
+        # Retrieve questions ... and display them through form?
+        event_name = event.eventname
+        date_time = event.date_time
+        questions = event.question_set.all()
+        has_questions = len(questions) > 0
+        # for choices
+        choices = [question.choice_set.all() for question in questions]
+        question_forms = [QuestionForm(instance=question) for question in questions]
+        choice_forms = [[ChoiceForm(instance=choice) for choice in qn_choices] for qn_choices in choices]
+        has_choices = [(len(qn_choices) > 0) for qn_choices in choice_forms]
+        context = {'event_name': event_name, 'date_time': date_time, 'questions': question_forms, 'has_questions': has_questions, 'choices': choice_forms, 'has_choices': has_choices}
+        return render(request, 'eventSystem/modify_questions.html', context)
+    
     # For adding/removing questions and users to event
 def modify_event(request, eventname):
     if not user_owns_event(request, eventname):
@@ -196,3 +250,14 @@ def user_owns_event(request, eventname):
     event_owners_names = [owner.username for owner in event_owners]
     print("Owners: " + str(event_owners_names))
     return request.user.username in event_owners_names # If user is not owner of this event, cannot view its homepage, only other pages like guest view or vendor view of event
+
+def user_vendor_for_event(request, eventname):
+    eventSet = Event.objects.filter(eventname = eventname)
+    if len(eventSet) == 0:
+        raise Http404("Event does not exist")
+    event = eventSet[0]
+    event_vendors = event.getVendors()
+    event_vendors_names = [vendor.username for vendor in event_vendors]
+    print("Vendors: " + str(event_vendors_names))
+    return request.user.username in event_vendors_names
+    
