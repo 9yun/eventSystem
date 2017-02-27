@@ -49,7 +49,8 @@ function GenOpenQuestionHtml() {
 }
 
 function GenChoiceQuestionHtml() {
-    DisableNewQuestions();
+    alert("Not ready :)");
+    //DisableNewQuestions();
 }
 
 function GetQuestionDiv(num) {
