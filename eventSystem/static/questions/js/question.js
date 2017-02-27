@@ -58,7 +58,7 @@ function GenOpenQuestionHtml() {
 }
 
 function GenChoiceQuestionHtml() {
-    //DisableNewQuestions();
+    DisableNewQuestions();
     var parent = document.getElementById("working_dynamic_question");
     // Make a working mc object
     var mco = new WorkingMC();
@@ -88,8 +88,8 @@ function GenChoiceQuestionHtml() {
     var submit_nchoice = GetSubmitButton();
     submit_nchoice.value = "Add Choice";
     submit_nchoice.style.background = "#ef6837"
-    submit_nchoice.onclick = function() {
-        if (nchoice_input.value == '') {
+    submit_nchoice.onclick = function () {
+        if (nchoice_input.value === '') {
             return;
         }
         // Make a div
@@ -113,14 +113,14 @@ function GenChoiceQuestionHtml() {
         var final_choice_del = GetSubmitButton();
         final_choice_del.value = "Delete";
         final_choice_del.style.background = "lightcoral";
-        final_choice_del.onclick = function() {
+        final_choice_del.onclick = function () {
             // remove from list
             var index = mco.Choices.indexOf(text);
             if (index > -1) {
                 mco.Choices.splice(index, 1);
-             }
-             // Remove html
-             mco_div.removeChild(tmp);
+            }
+            // Remove html
+            mco_div.removeChild(tmp);
         }
         tmp.appendChild(final_choice_del);
         tmp.appendChild(GetBreak());
@@ -227,10 +227,9 @@ function GetBreak() {
 
 function VerifyOpenQuestion() {
     var question = new Question(document.getElementById(__working_question_id).value,
-        'Open',
-        null,
+        'Open', [],
         num_total_questions);
-    if (question.qnText == '') {
+    if (question.qnText === '') {
         return;
     }
     // Check if internal duplicate
@@ -247,10 +246,9 @@ function VerifyOpenQuestion() {
 
 function VerifyChoiceQuestion(mco) {
     var question = new Question(document.getElementById(__working_question_id).value,
-        'Choice',
-        null,
+        'Choice', [],
         num_total_questions);
-    if (question.qnText == '') {
+    if (question.qnText === '') {
         return;
     }
     // Check if internal duplicate
@@ -260,6 +258,10 @@ function VerifyChoiceQuestion(mco) {
     // Check the choices
     if (mco.Choices.length < 2) {
         alert("A multiple choice question requires atleast \"2\" choices");
+        return;
+    }
+    if (areDuplicateChoices(mco.Choices)) {
+        alert("All multiple choice selections must be unique");
         return;
     }
     for (i = 0; i < mco.Choices.length; i++) {
@@ -293,7 +295,7 @@ function EnableNewQuestions() {
 
 function isDuplicate(qnText) {
     for (i = 0; i < __approved_questions.length; i++) {
-        if (qnText == __approved_questions[i].qnText) {
+        if (qnText === __approved_questions[i].qnText) {
             alert("Duplicate question - please submit another");
             document.getElementById(__working_question_id).value = '';
             document.getElementById(__working_question_id).placeholder = "Submit a different question";
@@ -301,6 +303,11 @@ function isDuplicate(qnText) {
         }
     }
     return false;
+}
+
+function areDuplicateChoices(choices) {
+    var ans = choices.length === new Set(choices).size;
+    return !ans;
 }
 
 function RenumberQuestions() {
@@ -357,7 +364,7 @@ function GenOpenQuestionFromHtml(question) {
     parent.appendChild(div);
 }
 
-function GenChoiceQuestionFromHtml() {
+function GenChoiceQuestionFromHtml(question) {
     var parent = document.getElementById("okay_dynamic_questions");
     // Get outer div
     var div = GetQuestionDiv(question.qnNumber);
@@ -384,6 +391,31 @@ function GenChoiceQuestionFromHtml() {
     div.appendChild(GetBreak());
     div.appendChild(question_text);
     div.appendChild(GetBreak());
+
+    var ans_div = document.createElement("div");
+    ans_div.style.maxWidth = "400px";
+    ans_div.style.margin = "auto";
+    ans_div.style.textAlign = "left";
+
+    // Add the MC answers
+    for (i = 0; i < question.Choices.length; i++) {
+        // Radio button
+        var text = question.Choices[i];
+        var final_choice = document.createElement("input");
+        final_choice.type = "radio";
+        final_choice.disabled = true;
+        ans_div.appendChild(final_choice);
+        // Radio button label
+        var final_choice_label = document.createElement("label");
+        final_choice_label.innerHTML = text;
+        final_choice_label.style.font = "300 25px/1.3 'Lobster Two', Helvetica, sans-serif";
+        final_choice_label.style.marginLeft = "20px";
+        final_choice_label.style.marginRight = "20px";
+        ans_div.appendChild(final_choice_label);
+        ans_div.appendChild(GetBreak());
+    }
+
+    div.appendChild(ans_div);
     div.appendChild(db);
     div.appendChild(GetBreak());
     parent.appendChild(div);
