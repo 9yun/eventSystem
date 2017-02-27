@@ -142,6 +142,11 @@ def create_event(request, username):
         context = {'username' : username, 'form': form}
         return render(request, 'eventSystem/create_event.html', context)
 
+def view_questions(request, eventname):
+    return HttpResponse(content="Coming soon!", status=200)
+
+
+
     # For adding/removing questions and users to event
 def modify_event(request, eventname):
     if not user_owns_event(request, eventname):
