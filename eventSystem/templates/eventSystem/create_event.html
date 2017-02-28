@@ -110,12 +110,20 @@
         </div>
       </div>
     </div>
+    <!-- Message handling -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tage }}">
+          {{ message|safe }}
+        </div>
+      {% endfor %}
+    {% endif %}
     <div class="input_container">
       <button type="Submit" class="fancy_text_small">Submit</button>
     </div>
   </form>
   <hr>
-  <div class="input_container">
+    <div class="input_container">
     <form action="/eventSystem/users/{{ username }}/">
       <input type="submit" value="Cancel" class="fancy cancel" />
     </form>
