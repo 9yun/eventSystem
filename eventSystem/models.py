@@ -3,6 +3,7 @@ from django import forms
 from django.forms import ModelForm
 from django.forms.widgets import CheckboxSelectMultiple, Select
 
+from django.utils import timezone
 import datetime
 
 # Create your models here.
@@ -43,11 +44,13 @@ class EventManager(models.Manager):
            
 class Event(models.Model):
     eventname = models.CharField(max_length = 100) 
-    date_time = models.DateTimeField('when')
+    date = models.DateField(default = timezone.now, blank = False)
+    start_time = models.TimeField(default = timezone.now, blank = False)
+    end_time = models.TimeField(default = timezone.now, blank = False)
     owners = models.ManyToManyField(User, related_name="owners")
     vendors = models.ManyToManyField(User, related_name="vendors")
     guests = models.ManyToManyField(User, related_name="guests")
-    plus_one = models.BooleanField(default = False)
+    plus_ones = models.BooleanField(default = False)
 
     objects = EventManager()
 
@@ -107,6 +110,15 @@ class Question(models.Model):
 
     visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = get_vendors_set) # Tracks which vendors can see the responses to the question
 
+    def set_visible_to(self, vendors): # rewrites the entire visible_to set, implicitly ignores any passed in vendor who is not registered as a vendor of the event
+        current_visible_to = self.visible_to.all()
+        event_vendors = self.get_vendors_set()
+        for vendor in event_vendors:
+            if vendor in vendors and vendor not in current_visible_to:
+                self.visible_to.add(vendor)
+            elif vendor not in vendors and vendor in current_visible_to:
+                self.visible_to.remove(vendor)
+    
     def safe_modify_text(self, text):
         sibling_choices = Choice.objects.filter(qn_for=self.qn_for)
         sibling_choices_texts = [choice.choice_text for choice in sibling_choices]
@@ -115,6 +127,12 @@ class Question(models.Model):
             self.save()
             return True
         return False
+
+    '''
+    def modify_choices(self, choices): # allows choice objects to be manipulated through QuestionForms that can be held in a single QuestionFormSet
+        current_choices
+        '''
+        
 
     '''
 class ChoiceQuestion(Question): # Also needs to keep track of which response has been chosen by which user
@@ -178,18 +196,22 @@ class MyModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         
 class EventForm(ModelForm):
     eventname = models.CharField(max_length = 100, help_text = "Please choose a unique name for your event")
-    date_time = models.DateTimeField(help_text = "When should the event take place")
-    owners = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple())
-    vendors = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple())
-    guests = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple())
-    plus_one = forms.BooleanField(help_text = "Plus Ones?")
+    #date_time = models.DateTimeField(help_text = "When should the event take place")
+    date = models.DateField(help_text = "When should the event take place?")
+    start_time = models.TimeField(help_text = "Start Time")
+    end_time = models.TimeField(help_text = "End Time")
+    owners = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
+    vendors = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
+    guests = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
+    plus_ones = forms.BooleanField(help_text = "Plus Ones?", required=False)
     class Meta:
         model = Event
-        fields = ['eventname', 'date_time', 'owners', 'vendors', 'guests', 'plus_one'] # TO-DO: Add questions... OR, can be done with AJAX later on
+        fields = ['eventname', 'date', 'start_time', 'end_time', 'owners', 'vendors', 'guests', 'plus_ones'] # TO-DO: Add questions... OR, can be done with AJAX later on
 
 class QuestionForm(ModelForm):
     qn_text = models.CharField(max_length = 200)
     visible_to = forms.ModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple()) # how to ensure only vendors get listed here in queryset?
+    
     class Meta:
         model = Question
         fields = ['qn_text', 'visible_to']

@@ -13,7 +13,11 @@ from django.contrib import messages
 
 from django.utils import timezone
 
+from django.forms import formset_factory
+
 from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm
+
+
 
 MIN_PASSWORD_LENGTH = 6
 
@@ -123,6 +127,7 @@ def event_home(request, eventname):
 def create_event(request, username):
     if request.method == "POST":
         print("Post detected to event creation")
+        print("Post body received: " + str(request.POST))
         newEventForm = EventForm(request.POST)
         if not newEventForm.is_valid():
             print("Invalid event!")
@@ -187,25 +192,40 @@ def modify_questions(request, eventname):
     if not user_owns_event(request, eventname):
         return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404 
+    event_name = event.eventname
+    date_time = event.date_time
+    questions = event.question_set.all()
+    has_questions = len(questions) > 0
+    question_choices = []
+    qn_formset_factory = formset_factory(QuestionForm, extra=2)
+    formset = [QuestionForm(instance = question) for question in questions]
+    questions_initial_formset = qn_formset_factory(initial=formset)
+                                    
     if request.method == "POST":
         # TO-DO : Iterate through request.POST["questions"], and for each qn, save qn to db with qnText field, then look at qnType field and construct Choice object for saved qn if necessary
         postData = request.POST
-        qns_modified = postData['questions']
+        
+        #qns_modified = postData['questions']
+
+        # Keep track of what's modified and what's new
+        #submitted_formset = qn_formst_factory(request.POSTinitial=formset)
+        
         choices_modified = choiceData['choices']
         print("Saving of questions suceeded!")
         return redirect(view_questions, eventname=eventname)
     else:
         # Retrieve questions ... and display them through form?
-        event_name = event.eventname
-        date_time = event.date_time
-        questions = event.question_set.all()
-        has_questions = len(questions) > 0
-        question_choice_forms = []
+
+        # REFACTOR TO USE FORMSET
+        
         for index in range(len(questions)):
             question = questions[index]
             choices = question.choice_set.all()
-            question_choice_forms.append((QuestionForm(instance=question), question.pk, [(ChoiceForm(instance=choice), choice.pk) for choice in choices]))
-        context = {'event_name': event_name, 'date_time': date_time, 'questions': question_choice_forms}
+            question_choices.append((QuestionForm(instance=question), question.pk, [(ChoiceForm(instance=choice), choice.pk) for choice in choices]))
+        questions_formset = [formset_factory(QuestionForm(instance = question)) for question in questions]
+        question_data = (questions_formset, question_choices)
+        #context = {'event_name': event_name, 'date_time': date_time, 'questions': question_choice_forms}
+        context = {'event_name': event_name, 'date_time': date_time, 'formset': questions_formset, 'questions' : question_choices}
         return render(request, 'eventSystem/modify_questions.html', context)
     
     # For adding/removing questions and users to event
