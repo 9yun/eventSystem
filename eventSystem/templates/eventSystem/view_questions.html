@@ -8,8 +8,21 @@
 {% if has_questions %}
   <p>Questions:</p>
   <ul>
-  {% for question in questions %}
-    <li>{{ question.qn_text }}</li>
+  {% for question, choices in questions %}
+  <li>{{ question.qn_text }}</li>
+    <ul>
+      {% for choice in choices %}
+        <li>{{ choice }}</li>
+      {% endfor %}
+    </ul>
+    <p>Vendors permitted to view response:</p>
+    <ul>
+    {% for vendor in visible_to %}
+      <li>{{ vendor }}</li>
+      {% empty %}
+      <p>None</p>
+    {% endfor %}
+    </ul>
   {% endfor %}
   </ul>
 {% else %}

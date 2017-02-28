@@ -87,6 +87,8 @@ class Event(models.Model):
         [self.addVendor(new_vendor) for new_vendor in newUsers['new_vendors']]
         [self.addGuest(new_guest) for new_guest in newUsers['new_guests']]
 
+    # Have a safe_modify_event method which allows modification of event name after checking eventname doesn't clash with other event of same user?
+        
 class Question(models.Model):
     qn_text = models.CharField(max_length = 200)
     event_for = models.ForeignKey(Event, on_delete = models.CASCADE)
@@ -103,7 +105,16 @@ class Question(models.Model):
     def get_vendors_set(self):
         return {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}
 
-    visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = get_vendors_set) # Tracks which vendors can see the responses to the question 
+    visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = get_vendors_set) # Tracks which vendors can see the responses to the question
+
+    def safe_modify_text(self, text):
+        sibling_choices = Choice.objects.filter(qn_for=self.qn_for)
+        sibling_choices_texts = [choice.choice_text for choice in sibling_choices]
+        if text not in sibling_choices_texts:
+            self.choice_text = text
+            self.save()
+            return True
+        return False
 
     '''
 class ChoiceQuestion(Question): # Also needs to keep track of which response has been chosen by which user
@@ -121,7 +132,7 @@ class ChoiceQuestion(Question): # Also needs to keep track of which response has
     '''
 
 class Choice(models.Model): # For creation of question and tracking of response
-    choice_text = models.CharField(max_length = 100)
+    choice_text = models.CharField(max_length = 100, unique = False)
     #qn_for = models.ForeignKey(ChoiceQuestion, on_delete = models.CASCADE, primary_key = False)
     qn_for = models.ForeignKey(Question, on_delete = models.CASCADE, primary_key = False)
     # Is there a clear handle on a choice object from the front-end?
@@ -131,6 +142,15 @@ class Choice(models.Model): # For creation of question and tracking of response
 
     def getChooserEmails(self): # use this to retrieve responses and therefore users who must be emailed when this choice gets deleted  
         return [response.user_from.email for response in getChoosers()]
+
+    def safe_modify_text(self, text): # can check that text does not clash with that of other choices for same qn
+        sibling_choices = Choice.objects.filter(qn_for=self.qn_for)
+        sibling_choices_texts = [choice.choice_text for choice in sibling_choices]
+        if text not in sibling_choices_texts:
+            self.choice_text = text
+            self.save()
+            return True
+        return False
     
 class Response(models.Model):
     qn_for = models.ForeignKey(Question, on_delete = models.CASCADE)
@@ -162,7 +182,7 @@ class EventForm(ModelForm):
     owners = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple())
     vendors = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple())
     guests = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple())
-    plus_ones = forms.BooleanField(help_text = "Plus Ones?")
+    plus_one = forms.BooleanField(help_text = "Plus Ones?")
     class Meta:
         model = Event
         fields = ['eventname', 'date_time', 'owners', 'vendors', 'guests', 'plus_one'] # TO-DO: Add questions... OR, can be done with AJAX later on

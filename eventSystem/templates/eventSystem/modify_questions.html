@@ -1,6 +1,7 @@
 <html>
   <head>
-    <script src = "/eventSystem/static/questions/js/modify_questions.js"></script>
+    <script src = "http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src = "/eventSystem/modify_qns_script"></script>
     <title>Event | {{ event_name }} | eventSystem</title>
     <h1>Event Name: {{ event_name }}</h1>
     <h3>Date & Time: {{ date_time }}</h3>
@@ -9,13 +10,22 @@
     {% if questions %}
       <p>Current Questions:</p>
     {% endif %}
-    <ul>  
-      {% for question in questions %}
-        <li>{{ question.qn_text }}</li>
+    <ul id="questions">  
+      {% for question, question_id, choices in questions %}
+        <li id={{ question_id }}>{{ question.qn_text }}</li>
+        <ul class="choices">
+	  {% for choice, choice_id in choices %}
+	    <li id={{ choice_id }}>{{ choice.choice_text }}</li>
+	    {% empty %}
+	  {% endfor %}
+	</ul>
       {% empty %}
         <li>This event has no questions so far. Go ahead and create the first ones!</li>
       {% endfor %}
     </ul>
+    {% if questions %}
+      <button id="submit_mods" style="display:none;">Submit Modified Questions</button>
+    {% endif %}
     <p><a href="{% url 'add_questions' event_name %}">Add New Questions</a></p>
     <p><a href="{% url 'event_home' event_name %}">Back to {{ event_name }}</a></p>
   </body>

@@ -13,7 +13,7 @@ from django.contrib import messages
 
 from django.utils import timezone
 
-from .models import User, Event, EventForm
+from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm
 
 MIN_PASSWORD_LENGTH = 6
 
@@ -154,7 +154,11 @@ def view_questions(request, eventname):
     date_time = event.date_time
     questions = event.question_set.all()
     has_questions = len(questions) > 0
-    context = {'event_name': event_name, 'date_time': date_time, 'questions': questions, 'has_questions': has_questions}
+    qnData = []
+    for index in range(len(questions)):
+        qnData.append((questions[index], [choice.choice_text for choice in questions[index].choice_set.all()]))
+    visible_to = [vendor.username for question in questions for vendor in  question.visible_to.all()]
+    context = {'event_name': event_name, 'date_time': date_time, 'questions': qnData, 'has_questions': has_questions, 'visible_to': visible_to}
     return render(request, 'eventSystem/view_questions.html', context)
 
 @login_required
@@ -185,6 +189,9 @@ def modify_questions(request, eventname):
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404 
     if request.method == "POST":
         # TO-DO : Iterate through request.POST["questions"], and for each qn, save qn to db with qnText field, then look at qnType field and construct Choice object for saved qn if necessary
+        postData = request.POST
+        qns_modified = postData['questions']
+        choices_modified = choiceData['choices']
         print("Saving of questions suceeded!")
         return redirect(view_questions, eventname=eventname)
     else:
@@ -193,12 +200,12 @@ def modify_questions(request, eventname):
         date_time = event.date_time
         questions = event.question_set.all()
         has_questions = len(questions) > 0
-        # for choices
-        choices = [question.choice_set.all() for question in questions]
-        question_forms = [QuestionForm(instance=question) for question in questions]
-        choice_forms = [[ChoiceForm(instance=choice) for choice in qn_choices] for qn_choices in choices]
-        has_choices = [(len(qn_choices) > 0) for qn_choices in choice_forms]
-        context = {'event_name': event_name, 'date_time': date_time, 'questions': question_forms, 'has_questions': has_questions, 'choices': choice_forms, 'has_choices': has_choices}
+        question_choice_forms = []
+        for index in range(len(questions)):
+            question = questions[index]
+            choices = question.choice_set.all()
+            question_choice_forms.append((QuestionForm(instance=question), question.pk, [(ChoiceForm(instance=choice), choice.pk) for choice in choices]))
+        context = {'event_name': event_name, 'date_time': date_time, 'questions': question_choice_forms}
         return render(request, 'eventSystem/modify_questions.html', context)
     
     # For adding/removing questions and users to event
@@ -260,4 +267,20 @@ def user_vendor_for_event(request, eventname):
     event_vendors_names = [vendor.username for vendor in event_vendors]
     print("Vendors: " + str(event_vendors_names))
     return request.user.username in event_vendors_names
+
+# Inefficient to serve files with django :(
+def get_script(request, script_path):
+    with open(script_path,'r') as f:
+        data = f.read()
+        response = HttpResponse(data, content_type='text/javascript')
+        response['Content-Length'] = len(data)
+    return response
+                                        
+
+
+def get_modify_qns_script(request):
+    return get_script(request, "./eventSystem/static/questions/js/modify_questions.js")
+
+def get_add_qns_script(request):
+    return get_script(request, "./eventSystem/static/questions/js/question.js")
     
