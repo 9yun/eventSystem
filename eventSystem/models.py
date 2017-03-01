@@ -108,8 +108,10 @@ class Question(models.Model):
     def get_vendors_set(self):
         return {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}
 
-    visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = get_vendors_set) # Tracks which vendors can see the responses to the question
-
+    #visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}) # Tracks which vendors can see the responses to the question
+    #visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = self.get_vendors_set) 
+    visible_to = models.ManyToManyField(User, related_name="visble_to")
+    
     def set_visible_to(self, vendors): # rewrites the entire visible_to set, implicitly ignores any passed in vendor who is not registered as a vendor of the event
         current_visible_to = self.visible_to.all()
         event_vendors = self.get_vendors_set()
@@ -211,10 +213,20 @@ class EventForm(ModelForm):
         model = Event
         fields = ['eventname', 'date', 'start_time', 'end_time', 'owners', 'vendors', 'guests', 'plus_ones'] # TO-DO: Add questions... OR, can be done with AJAX later on
 
+class VisibleToVendorField(forms.ModelMultipleChoiceField):
+    def __init__(self, *args, **kwargs):
+        #super(VisibleToVendorField, self).__init__(*args, **kwargs)
+        event = kwargs.pop('event', None)
+        super(VisibleToVendorField, self).__init__(*args, **kwargs)
+        self.required = False
+        if event:
+            qn_event_vendor_names = [vendor.username for vendor in event.getVendors()]
+            self.queryset = User.objects.filter(username__in = qn_event_vendor_names)
+        
 class QuestionForm(ModelForm):
     qn_text = models.CharField(max_length = 200)
-    visible_to = forms.ModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple()) # how to ensure only vendors get listed here in queryset?
-    
+    visible_to = forms.ModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False) # how to ensure only vendors get listed here in queryset?
+
     class Meta:
         model = Question
         fields = ['qn_text', 'visible_to']

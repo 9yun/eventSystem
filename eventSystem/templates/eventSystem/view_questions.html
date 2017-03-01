@@ -8,7 +8,7 @@
 {% if has_questions %}
   <p>Questions:</p>
   <ul>
-  {% for question, choices in questions %}
+  {% for question, choices, vendors in questions %}
   <li>{{ question.qn_text }}</li>
     <ul>
       {% for choice in choices %}
@@ -17,8 +17,8 @@
     </ul>
     <p>Vendors permitted to view response:</p>
     <ul>
-    {% for vendor in visible_to %}
-      <li>{{ vendor }}</li>
+    {% for vendor in vendors %}
+      <li><a href="{% url 'user_home' vendor %}">{{ vendor }}</a></li>
       {% empty %}
       <p>None</p>
     {% endfor %}

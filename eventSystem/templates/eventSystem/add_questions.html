@@ -17,9 +17,12 @@
   {% else %}
     <p>This event has no questions so far. Go ahead and create the first ones!</p>
   {% endif %}
-
+    <form method="post">
+      {% csrf_token %}
+      {{ new_qn_form }}
+      <button type="submit">Submit</button>
+    </form>
   <p><a href="{% url 'modify_questions' event_name %}">Modify Existing Questions</a></p>
-
   <p><a href="{% url 'event_home' event_name %}">Back to {{ event_name }}</a></p>
 </body>
 

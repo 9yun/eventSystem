@@ -13,9 +13,9 @@ from django.contrib import messages
 
 from django.utils import timezone
 
-from django.forms import formset_factory
-
-from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm
+#from django.forms import formset_factory
+from django.forms import modelform_factory, modelformset_factory
+from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm, VisibleToVendorField
 
 
 
@@ -145,7 +145,8 @@ def create_event(request, username):
         print("Guests of new event: " + str(newEvent.getGuests()))
         return redirect(user_home, username=username)
     else:
-        form = EventForm({})
+        #form = EventForm({})
+        form = EventForm()
         context = {'username' : username, 'form': form}
         return render(request, 'eventSystem/create_event.html', context)
 
@@ -166,9 +167,9 @@ def view_questions(request, eventname):
     has_questions = len(questions) > 0
     qnData = []
     for index in range(len(questions)):
-        qnData.append((questions[index], [choice.choice_text for choice in questions[index].choice_set.all()]))
-    visible_to = [vendor.username for question in questions for vendor in  question.visible_to.all()]
-    context = {'event_name': event_name, 'event_date': date, 'event_start' : start, 'event_end': end, 'questions': qnData, 'has_questions': has_questions, 'visible_to': visible_to}
+        qnData.append((questions[index], [choice.choice_text for choice in questions[index].choice_set.all()], [vendor.username for vendor in questions[index].visible_to.all()]))
+    #visible_to = [vendor.username for question in questions for vendor in  question.visible_to.all()]
+    context = {'event_name': event_name, 'event_date': date, 'event_start' : start, 'event_end': end, 'questions': qnData, 'has_questions': has_questions}
     return render(request, 'eventSystem/view_questions.html', context)
 
 @login_required
@@ -180,11 +181,23 @@ def add_questions(request, eventname):
     if request.method == "POST":
         # TO-DO : save qns to db... All validation already done on client side?
         # TO-DO : Iterate through request.POST["questions"], and for each qn, save qn to db with qnText field, then look at qnType field and construct Choice object for saved qn if necessary
-        print("Saving of questions suceeded!")
+        print("POST body: " + str(request.POST))
+        new_qn_form = QuestionForm(request.POST)
+        if not new_qn_form.is_valid():
+            print("Form is invalid!")
+            print(new_qn_form.errors)
+            messages.error(request, "Invalid Question! Please ensure text is properly filled.")
+            return redirect(create_event, eventname=eventname)
+        #print("Saving of questions suceeded!")
+        new_qn = new_qn_form.save(commit=False)
+        new_qn.event_for = event
+        new_qn.save()
+        new_qn_form.save_m2m() #need to do this to register foreign-key relationships into DB 
+        print("Saving of questions suceeded!") 
         return redirect(view_questions, eventname=eventname)
 
     else:
-        # Any contextual information needed?
+        # Any contextual informatnion needed?
         event_name = event.eventname
         #date_time = event.date_time
         date = event.date
@@ -192,38 +205,45 @@ def add_questions(request, eventname):
         end = event.end_time
         questions = event.question_set.all()
         has_questions = len(questions) > 0
-        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': questions, 'has_questions': has_questions}                
+        QuestionFactory = modelform_factory(Question, fields = ('qn_text', 'visible_to'))
+        new_qn_form = QuestionFactory()
+        # Limit QuerySet
+        new_qn_form.fields['visible_to'] = VisibleToVendorField(queryset = None, event = event)
+        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': questions, 'has_questions': has_questions, 'new_qn_form': new_qn_form}                
         return render(request, 'eventSystem/add_questions.html', context)
-
+    
 def modify_questions(request, eventname):
     # must be owner of event, not even guest
     if not user_owns_event(request, eventname):
         return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404 
     event_name = event.eventname
-    #date_time = event.date_time
     date = event.date
     start = event.start_time
     end = event.end_time
     questions = event.question_set.all()
     has_questions = len(questions) > 0
     question_choices = []
-    qn_formset_factory = formset_factory(QuestionForm, extra=2)
-    formset = [QuestionForm(instance = question) for question in questions]
-    questions_initial_formset = qn_formset_factory(initial=formset)
-                                    
+    qn_formset = modelformset_factory(Question, fields = ('qn_text', 'visible_to'), extra=0)
+    initial_forms = Question.objects.filter(event_for = event)
+    formset = qn_formset(queryset = initial_forms)
+    choice_formset = modelformset_factory(Choice, fields = ('choice_text',), extra=0)
+    c_formsets = [choice_formset(queryset = Choice.objects.filter(qn_for = question)) for question in questions]
+    #data_tup_list = [formset]
+    
     if request.method == "POST":
         # TO-DO : Iterate through request.POST["questions"], and for each qn, save qn to db with qnText field, then look at qnType field and construct Choice object for saved qn if necessary
-        postData = request.POST
         
-        #qns_modified = postData['questions']
-
         # Keep track of what's modified and what's new
         #submitted_formset = qn_formst_factory(request.POSTinitial=formset)
-        
-        choices_modified = choiceData['choices']
-        print("Saving of questions suceeded!")
-        return redirect(view_questions, eventname=eventname)
+        submitted_formset = qn_formset(request.POST, initial=initial_forms)
+        if submitted_formset.is_valid():
+            print("Saving of questions suceeded!")
+            submitted_formset.save()
+            return redirect(view_questions, eventname=eventname)
+        print("Errors in forms: " + submitted_formset.errors)
+        # Add error message
+        return redirect(request, eventname=eventname)
     else:
         # Retrieve questions ... and display them through form?
 
@@ -233,10 +253,7 @@ def modify_questions(request, eventname):
             question = questions[index]
             choices = question.choice_set.all()
             question_choices.append((QuestionForm(instance=question), question.pk, [(ChoiceForm(instance=choice), choice.pk) for choice in choices]))
-        questions_formset = [formset_factory(QuestionForm(instance = question)) for question in questions]
-        question_data = (questions_formset, question_choices)
-        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': question_choices}
-        #context = {'event_name': event_name, 'date': date, 'start' : start, 'end': end, 'formset': questions_formset, 'questions' : question_choices}
+        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': question_choices, 'formset': formset}
         return render(request, 'eventSystem/modify_questions.html', context)
     
     # For adding/removing questions and users to event
@@ -256,10 +273,12 @@ def modify_event(request, eventname):
             return redirect(modify_event, eventname=eventname)
 
         print("Valid modification!")
-        oldEvent.save()
+        #oldEvent.save()
+        modEventForm.save()
         return redirect(event_home, eventname=eventname)
     else:
         changeForm = EventForm(instance=oldEvent)
+        [print(field.name, field) for field in changeForm]
         context = {'event' : oldEvent, 'form' : changeForm, 'user' : request.user}
         return render(request, 'eventSystem/modify_event.html', context)
 

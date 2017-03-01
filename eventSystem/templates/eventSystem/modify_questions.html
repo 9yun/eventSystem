@@ -10,22 +10,14 @@
     {% if questions %}
       <p>Current Questions:</p>
     {% endif %}
-    <ul id="questions">  
-      {% for question, question_id, choices in questions %}
-        <li id={{ question_id }}>{{ question.qn_text }}</li>
-        <ul class="choices">
-	  {% for choice, choice_id in choices %}
-	    <li id={{ choice_id }}>{{ choice.choice_text }}</li>
-	    {% empty %}
-	  {% endfor %}
-	</ul>
-      {% empty %}
-        <li>This event has no questions so far. Go ahead and create the first ones!</li>
-      {% endfor %}
-    </ul>
-    {% if questions %}
-      <button id="submit_mods" style="display:none;">Submit Modified Questions</button>
-    {% endif %}
+      <form method="post">
+	{% csrf_token %}
+	{{ formset.management_form }}
+	{% for form in formset %}
+	  <div>{{ form }}</div>
+	{% endfor %}
+	<button type="submit">Submit Modifications</button>
+      </form>
     <p><a href="{% url 'add_questions' event_name %}">Add New Questions</a></p>
     <p><a href="{% url 'event_home' event_name %}">Back to {{ event_name }}</a></p>
   </body>
