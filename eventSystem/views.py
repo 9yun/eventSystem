@@ -221,39 +221,55 @@ def modify_questions(request, eventname):
     date = event.date
     start = event.start_time
     end = event.end_time
-    questions = event.question_set.all()
+    questions = event.question_set.all().order_by('pk')
     has_questions = len(questions) > 0
     question_choices = []
     qn_formset = modelformset_factory(Question, fields = ('qn_text', 'visible_to'), extra=0)
-    initial_forms = Question.objects.filter(event_for = event)
-    formset = qn_formset(queryset = initial_forms)
+    initial_forms = Question.objects.filter(event_for = event).order_by('pk')
+    formset = qn_formset(queryset = initial_forms, prefix = 'questions')
     choice_formset = modelformset_factory(Choice, fields = ('choice_text',), extra=0)
-    c_formsets = [choice_formset(queryset = Choice.objects.filter(qn_for = question)) for question in questions]
-    #data_tup_list = [formset]
+    initial_choices_forms = [Choice.objects.filter(qn_for=questions[index]) for index in range(len(questions))]
+    c_formsets = [choice_formset(queryset = initial_choices_forms[index], prefix = 'choices-' + str(index)) for index in range(len(questions))]
+    all_formsets = [(formset[qn_index], c_formsets[qn_index]) for qn_index in range(len(formset))]
+    formset_management = formset.management_form
     
     if request.method == "POST":
-        # TO-DO : Iterate through request.POST["questions"], and for each qn, save qn to db with qnText field, then look at qnType field and construct Choice object for saved qn if necessary
-        
+
+        print("Massive post body: " + str(request.POST))
         # Keep track of what's modified and what's new
-        #submitted_formset = qn_formst_factory(request.POSTinitial=formset)
-        submitted_formset = qn_formset(request.POST, initial=initial_forms)
+        # 1) Validation of qn_text and visible_to fields
+        submitted_formset = qn_formset(request.POST, initial=initial_forms, prefix = 'questions')
         if submitted_formset.is_valid():
-            print("Saving of questions suceeded!")
+            print("Saving of modified questions suceeded!")
+            # Save questions
             submitted_formset.save()
+            print("About to validate and save questions")
+            for choice_formset_index in range(len(c_formsets)):
+                submitted_choice_formset = choice_formset(request.POST, initial=initial_choices_forms[choice_formset_index], prefix = 'choices-' + str(choice_formset_index))
+                if not submitted_choice_formset.is_valid():
+                    print("Errors in choice form " + str(choice_formset_index))
+                    [print(form_errors) for form_errors in submitted_choice_formset.errors]
+                    return redirect(modify_questions, eventname=eventname)
+                # Save modified choices of question
+                modified_choices = submitted_choice_formset.save(commit=False)
+                print("Length of submitted choices formset: " + str(len(submitted_choice_formset)))
+                print("Length of modified choices: " + str(len(modified_choices)))
+                for modified_choice_index in range(len(submitted_choice_formset)):
+                    modified_choice = submitted_choice_formset[modified_choice_index]
+                    modified_choice.qn_for = questions[choice_formset_index]
+                    modified_choice.save() # save back to update foreign-key relations with qn object
+                print("Saved choices for question " + str(choice_formset_index))
+            print("Saving of modified choices succeeded!")
             return redirect(view_questions, eventname=eventname)
-        print("Errors in forms: " + submitted_formset.errors)
+        
+        print("Errors in question forms: ")
+        [print(form_errors) for form_errors in submitted_formset.errors]
         # Add error message
-        return redirect(request, eventname=eventname)
+        return redirect(modify_questions, eventname=eventname)
     else:
         # Retrieve questions ... and display them through form?
-
         # REFACTOR TO USE FORMSET
-        
-        for index in range(len(questions)):
-            question = questions[index]
-            choices = question.choice_set.all()
-            question_choices.append((QuestionForm(instance=question), question.pk, [(ChoiceForm(instance=choice), choice.pk) for choice in choices]))
-        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': question_choices, 'formset': formset}
+        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'formset': all_formsets, 'formset_management': formset_management}
         return render(request, 'eventSystem/modify_questions.html', context)
     
     # For adding/removing questions and users to event

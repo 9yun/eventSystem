@@ -225,18 +225,12 @@ class VisibleToVendorField(forms.ModelMultipleChoiceField):
         
 class QuestionForm(ModelForm):
     qn_text = models.CharField(max_length = 200)
-    visible_to = forms.ModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False) # how to ensure only vendors get listed here in queryset?
+    visible_to = forms.ModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False) 
 
     class Meta:
         model = Question
         fields = ['qn_text', 'visible_to']
 
-        '''
-class ChoiceQuestionForm(QuestionForm):
-    choice_text = models.CharField(max_length = 100)
-    class Meta:
-        model = ChoiceQuestion
-        '''
 class ChoiceForm(ModelForm):
     choice_text = models.CharField(max_length = 100)
     class Meta:

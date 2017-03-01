@@ -12,9 +12,20 @@
     {% endif %}
       <form method="post">
 	{% csrf_token %}
-	{{ formset.management_form }}
-	{% for form in formset %}
-	  <div>{{ form }}</div>
+	{{ formset_management }}
+	{% for qn_form, choice_formset in formset %}
+	<div>
+	  <div>{{ qn_form }}</div>
+	      {% if choice_formset %}
+	        {{ choice_formset.management_form }}
+	      {% endif %}
+	      {% for choice_form in choice_formset %}
+	        <div>{{ choice_form }}</div>
+	      {% empty %}
+	      {% endfor %}
+	</div>
+	{% empty %}
+	<p>No questions to modify</p>
 	{% endfor %}
 	<button type="submit">Submit Modifications</button>
       </form>
