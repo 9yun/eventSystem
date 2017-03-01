@@ -10,7 +10,7 @@
 <p>Events owned by {{ noun }}:</p>
 <ul>
   {% for event in owned_events %}
-  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
+  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> on {{ event.date }} from {{ event.start_time }} to {{ event.end_time }}</li>
   {% endfor %}
 </ul>
 
@@ -23,7 +23,7 @@
   <p>Vendor for:</p>
   <ul>
     {% for event in vendor_events %}
-      <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
+      <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> on {{ event.date }} from {{ event.start_time }} to {{ event.end_time }}</li>
     {% endfor %}
   </ul>
 {% else %}
@@ -34,7 +34,7 @@
 <p>Guest for:</p>
 <ul>
   {% for event in guest_events %}
-  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> at {{ event.date_time }}</li>
+  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> on {{ event.date }} from {{ event.start_time }} to {{ event.end_time }}</li>
   {% endfor %}
 </ul>
 {% else %}

@@ -120,7 +120,8 @@ def event_home(request, eventname):
     event_guests = event.getGuests()
     has_vendors = len(event_vendors) > 0
     has_guests = len(event_guests) > 0
-    context = {'event_name' : event.eventname, 'date_time' : event.date_time,  'event_owners' : event_owners, 'event_vendors' : event_vendors, 'event_guests' : event_guests, 'has_vendors' : has_vendors, 'has_guests' : has_guests}
+    context = {'event_name' : event.eventname, 'event_date' : event.date, 'event_start' : event.start_time, 'event_end': event.end_time,  'event_owners' : event_owners, 'event_vendors' : event_vendors, 'event_guests' : event_guests, 'has_vendors' : has_vendors, 'has_guests' : has_guests}
+    
     return render(request, 'eventSystem/event_home.html', context)
 
 @login_required
@@ -131,6 +132,7 @@ def create_event(request, username):
         newEventForm = EventForm(request.POST)
         if not newEventForm.is_valid():
             print("Invalid event!")
+            print(newEventForm.errors)
             messages.error(request, "Invalid Event! Please try different event name and enter date in valid format such as MM/DD/YY HH:MM:SS")
             return redirect(create_event, username=username)
         print("Valid event!")
@@ -156,14 +158,17 @@ def view_questions(request, eventname):
     # Event existence and verification of permissions done at this point
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404
     event_name = event.eventname
-    date_time = event.date_time
+    #date_time = event.date_time
+    date = event.date
+    start = event.start_time
+    end = event.end_time
     questions = event.question_set.all()
     has_questions = len(questions) > 0
     qnData = []
     for index in range(len(questions)):
         qnData.append((questions[index], [choice.choice_text for choice in questions[index].choice_set.all()]))
     visible_to = [vendor.username for question in questions for vendor in  question.visible_to.all()]
-    context = {'event_name': event_name, 'date_time': date_time, 'questions': qnData, 'has_questions': has_questions, 'visible_to': visible_to}
+    context = {'event_name': event_name, 'event_date': date, 'event_start' : start, 'event_end': end, 'questions': qnData, 'has_questions': has_questions, 'visible_to': visible_to}
     return render(request, 'eventSystem/view_questions.html', context)
 
 @login_required
@@ -181,10 +186,13 @@ def add_questions(request, eventname):
     else:
         # Any contextual information needed?
         event_name = event.eventname
-        date_time = event.date_time
+        #date_time = event.date_time
+        date = event.date
+        start = event.start_time
+        end = event.end_time
         questions = event.question_set.all()
         has_questions = len(questions) > 0
-        context = {'event_name': event_name, 'date_time': date_time, 'questions': questions, 'has_questions': has_questions}                
+        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': questions, 'has_questions': has_questions}                
         return render(request, 'eventSystem/add_questions.html', context)
 
 def modify_questions(request, eventname):
@@ -193,7 +201,10 @@ def modify_questions(request, eventname):
         return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404 
     event_name = event.eventname
-    date_time = event.date_time
+    #date_time = event.date_time
+    date = event.date
+    start = event.start_time
+    end = event.end_time
     questions = event.question_set.all()
     has_questions = len(questions) > 0
     question_choices = []
@@ -224,8 +235,8 @@ def modify_questions(request, eventname):
             question_choices.append((QuestionForm(instance=question), question.pk, [(ChoiceForm(instance=choice), choice.pk) for choice in choices]))
         questions_formset = [formset_factory(QuestionForm(instance = question)) for question in questions]
         question_data = (questions_formset, question_choices)
-        #context = {'event_name': event_name, 'date_time': date_time, 'questions': question_choice_forms}
-        context = {'event_name': event_name, 'date_time': date_time, 'formset': questions_formset, 'questions' : question_choices}
+        context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': question_choices}
+        #context = {'event_name': event_name, 'date': date, 'start' : start, 'end': end, 'formset': questions_formset, 'questions' : question_choices}
         return render(request, 'eventSystem/modify_questions.html', context)
     
     # For adding/removing questions and users to event
@@ -235,30 +246,16 @@ def modify_event(request, eventname):
     oldEvent = Event.objects.filter(eventname=eventname)[0] # Can assume at this point that event exists in DB, since checks were made above for 404 
     if request.method == "POST":
         # Convert names into user objects
-        '''
-        owners_info = request.POST['owners'] if 'owners' in request.POST else []
-        vendors_info = request.POST['vendors'] if 'vendors' in request.POST else []
-        guests_info = request.POST['guests'] if 'guests' in request.POST else []
-        '''
-        modEventForm = EventForm(request.POST)
+        print("POST info received: " + str(request.POST))
+        modEventForm = EventForm(request.POST, instance=oldEvent)
+
         if not modEventForm.is_valid():
             print("GG form still not valid liao")
-            message.warning(request, "Invalid input")
+            print(modEventForm.errors)
+            messages.warning(request, "Invalid input")
             return redirect(modify_event, eventname=eventname)
-            
-        new_owners = modEventForm.cleaned_data['owners']
-        new_vendors = modEventForm.cleaned_data['vendors']
-        new_guests = modEventForm.cleaned_data['guests']
-        '''
-        new_owners = list(map(lambda x : User.objects.filter(pk=x)[0], owners_info))
-        new_vendors = list(map(lambda x : User.objects.filter(pk=x)[0], vendors_info))
-        new_guests = list(map(lambda x : User.objects.filter(pk=x)[0], guests_info))
-        '''
-        print("New owners: " + str(new_owners))
-        print("New vendors: " + str(new_vendors))
-        print("New guests: " + str(new_guests))
-        newUsers = {'new_owners' : new_owners, 'new_vendors' : new_vendors, 'new_guests' : new_guests}
-        oldEvent.addUsers(newUsers)
+
+        print("Valid modification!")
         oldEvent.save()
         return redirect(event_home, eventname=eventname)
     else:

@@ -198,8 +198,11 @@ class EventForm(ModelForm):
     eventname = models.CharField(max_length = 100, help_text = "Please choose a unique name for your event")
     #date_time = models.DateTimeField(help_text = "When should the event take place")
     date = models.DateField(help_text = "When should the event take place?")
-    start_time = models.TimeField(help_text = "Start Time")
-    end_time = models.TimeField(help_text = "End Time")
+    #start_time = models.TimeField(help_text = "Start Time", input_formats = ['%I:%M %p'])
+    start_time = forms.fields.TimeField(input_formats = ['%I:%M %p', '%H:%M:%S', '%H:%M'])
+    #end_time = models.TimeField(help_text = "End Time", input_formats = ['%I:%M %p'])
+    
+    end_time = forms.fields.TimeField(input_formats = ['%I:%M %p', '%H:%M:%S', '%H:%M'])
     owners = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
     vendors = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
     guests = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
