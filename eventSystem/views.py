@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.forms import modelform_factory, modelformset_factory
 from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm, VisibleToVendorField
 
+from django.http import JsonResponse
 
 
 MIN_PASSWORD_LENGTH = 6
@@ -125,7 +126,9 @@ def event_home(request, eventname):
     return render(request, 'eventSystem/event_home.html', context)
 
 @login_required
-def create_event(request, username):
+def create_event(request):
+    # safe to assume request.user exists because of @login_required decorator?
+    username = request.user.username
     if request.method == "POST":
         print("Post detected to event creation")
         print("Post body received: " + str(request.POST))
@@ -134,7 +137,8 @@ def create_event(request, username):
             print("Invalid event!")
             print(newEventForm.errors)
             messages.error(request, "Invalid Event! Please try different event name and enter date in valid format such as MM/DD/YY HH:MM:SS")
-            return redirect(create_event, username=username)
+            #return redirect(create_event, username=username)
+            return redirect(create_event)
         print("Valid event!")
         creator = User.objects.filter(username = username)[0] # Safe to assume at this point that a user will be found since login_required decorator has been enforced
         newEvent = newEventForm.save()
@@ -300,35 +304,41 @@ def modify_event(request, eventname):
 
 @login_required    
 def add_qn_new_event(request):
-    if request.method == "POST":
-        # validate qns, save with commit=false
-        qn_formset = modelformset_factory(Question, fields = ('qn_text', 'visible_to'), extra=0)
-        submitted_formset = qn_formset(request.POST)
-        if submitted_formset.is_valid():
-            print("Questions for new event are valid!")
-            new_event_questions = submitted_formset.save(commit=False)
-            # retrieve user from request
-            if not hasattr(request, 'user') or not hasattr(request.user, 'username'):
-                print("Rejecting request from unknown user")
-                return HttpResponse(content="You are not a registered and logged-in user", status=401, reason="Unauthorized")
-            # get most recent event of user
-            user_ordered_events = Event.adi.owners.all().order_by('pk')
-            if len(user_ordered_events) == 0:
-                print("User has not created any events yet.")
-                return HttpResponse(content="No event found for this user", status = 404, reason = "You have no events")
-            user_latest_event = user_ordered_events[len(user_ordered_events) - 1] # query sets don't allow the -1 indexing for some reason
-            print("Name of event this qn is added to:%s", user_latest_event.eventname)
-            # set event of qns to this event
-            for new_event_qn in new_event_questions:
-                new_event_qn.event_for = user_latest_event
-                # Save to DB
-                new_event_qn.save() 
-                print("Saved question %s", new_event_qn.qn_text)
-            return HttpResponse(content="Success", status = 200)
-    else:
-        return HttpResponse(content="This URL is for POST requests only", status = 200)
-            
+    if not hasattr(request, 'user') or not hasattr(request.user, 'username'):
+        print("Rejecting request from unknown user")
+        return HttpResponse(content="You are not a registered and logged-in user", status=401, reason="Unauthorized")
+                                    
+    if request.method != "POST":
+        return HttpResponse(content="This URL is for POST requests only.", status=200)
 
+    user_ordered_events = Event.adi.owners.all().order_by('pk')
+    if len(user_ordered_events) == 0:
+        print("User has not created any events yet.")
+        return HttpResponse(content="No event found for this user", status = 404, reason = "You have no events")
+    user_latest_event = user_ordered_events[len(user_ordered_events) - 1] # query sets don't allow the -1 indexing for some reason        
+    print("Event name : %s"%user_latest_event.eventname)
+
+    # validate qns, save with commit=false
+    #errors = []
+    valid_qns = []
+    print("Post data: " + str(request.POST))
+    for new_qn_json in request.POST:
+        new_qn_form = QuestionForm(new_qn_json)
+        if new_qn_form.is_valid() :
+            new_qn = new_qn_form.save(commit=False)
+            # set event of qns to this event     
+            new_qn.event_for = user_latest_event
+            valid_qns.append(new_qn)
+        else:
+            return HttpResponse(content="Invalid question detected. Not saving. Cause for rejection: %s"%new_qn_form.errors, status=200)
+    # Save to DB
+    if len(valid_qns) > 0:
+        for valid_qn in valid_qns:
+            valid_qn.save() 
+            print("Saved question %s", valid_qn.qn_text)
+    user_home_url = "/eventSystem/user/%s"%request.user
+    print("Saved all questions, about to redirect user to his home page %s"%user_home_url)
+    return JsonResponse({'redirect_to':user_home_url})
     
 
 # Helper function used by event_home and modify_event
