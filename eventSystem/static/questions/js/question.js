@@ -13,24 +13,38 @@ num_total_questions = 1;
 //////////
 function submitForm(element) {
     if (!allValidate()) {
-      return false;
+        return false;
     }
+    var has_sent_qns = false;
     var xhttp = new XMLHttpRequest();
-    xhttp.open (element.method, element.action, true);
+    xhttp.open(element.method, element.action, true);
     xhttp.send(new FormData(element));
     xhttp.onreadystatechange = function () {
-      if (this.readyState == 4 && this.status == 200) {
-        // Event saved on server, begin sending questions
-        // TODO: API Calls here
-      } else if (this.readyState == 4 && this.status != 200) {
-        // The event could not be saved...write the error message
-        var error_div = document.getElementById("error_div");
-        // Create the append the error message
-        var p = document.createElement("p");
-        p.className = "alert";
-        p.innerHTML = this.responseText;
-        error_div.appendChild(p);
-      }
+        if (this.readyState == 4 && this.status == 200) {
+            if (has_sent_qns) {
+                // Redirect
+                var rsp = JSON.parse(this.responseText);
+                var to_redir = rsp.redirect_to;
+                if (to_redir != null) {
+                    window.location.replace(to_redir);
+                } else {
+                    alert("Could not parse response from server :(");
+                }
+            } else {
+                // Event saved on server, begin sending questions
+                xhttp.open("POST", "/eventSystem/add_new_questions/", true);
+                xhttp.send(JSON.stringify(__approved_questions))
+                has_sent_qns = true;
+            }
+        } else if (this.readyState == 4 && this.status != 200) {
+            // The event/questions could not be saved...write the error message
+            var error_div = document.getElementById("error_div");
+            // Create the append the error message
+            var p = document.createElement("p");
+            p.className = "alert";
+            p.innerHTML = this.responseText;
+            error_div.appendChild(p);
+        }
     }
     return false;
 }
@@ -49,42 +63,42 @@ function validateEventName() {
     var x = document.getElementsByName("eventname");
     x = x[0];
     re = /[^a-zA-Z0-9_ ]/g;
-    if(x.value.match(re)) {
-      alert("Event name may only contain letters, numbers, underscores and spaces.");
-      x.focus();
-      x.style="color:red";
-      return false;
+    if (x.value.match(re)) {
+        alert("Event name may only contain letters, numbers, underscores and spaces.");
+        x.focus();
+        x.style = "color:red";
+        return false;
     }
     return true;
 }
 
 function validateTime() {
-  var x = document.getElementsByName("start_time");
-  x = x[0];
-  re = /^(\d{1,2}):(\d{2})\s*([ap]m)/i;
-  if (x.value != '' && !x.value.match(re)) {
-    alert("Invalid time format: " + x.value);
-    x.focus();
-    x.value = "HH:MM AM/PM";
-    x.style = "color:red";
-    return false;
-  }
-  // Modify it for the server
-  var matches = re.exec(x.value);
-  x.value = matches[1] + ":" + matches[2] + " " + matches[3];
-  x = document.getElementsByName("end_time");
-  x = x[0];
-  re = /^(\d{1,2}):(\d{2})\s*([ap]m)/i;
-  if (x.value != '' && !x.value.match(re)) {
-    alert("Invalid time format: " + x.value);
-    x.focus();
-    x.value = "HH:MM AM/PM";
-    x.style = "color:red";
-    return false;
-  }
-  matches = re.exec(x.value);
-  x.value = matches[1] + ":" + matches[2] + " " + matches[3];
-  return true;
+    var x = document.getElementsByName("start_time");
+    x = x[0];
+    re = /^(\d{1,2}):(\d{2})\s*([ap]m)/i;
+    if (x.value != '' && !x.value.match(re)) {
+        alert("Invalid time format: " + x.value);
+        x.focus();
+        x.value = "HH:MM AM/PM";
+        x.style = "color:red";
+        return false;
+    }
+    // Modify it for the server
+    var matches = re.exec(x.value);
+    x.value = matches[1] + ":" + matches[2] + " " + matches[3];
+    x = document.getElementsByName("end_time");
+    x = x[0];
+    re = /^(\d{1,2}):(\d{2})\s*([ap]m)/i;
+    if (x.value != '' && !x.value.match(re)) {
+        alert("Invalid time format: " + x.value);
+        x.focus();
+        x.value = "HH:MM AM/PM";
+        x.style = "color:red";
+        return false;
+    }
+    matches = re.exec(x.value);
+    x.value = matches[1] + ":" + matches[2] + " " + matches[3];
+    return true;
 }
 
 function Question(qnText, qnType, Choices, qnNumber) {
