@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.forms import modelform_factory, modelformset_factory
 from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm, VisibleToVendorField
 
+import json
 from django.http import JsonResponse
 
 
@@ -80,13 +81,15 @@ def user_login(request):
 def user_logout(request):
     logout(request) # TO-DO: Check if user was logged-in in the first place?
     return redirect(user_login)
-    
+
+'''
 @login_required
 def login_redirect(request):
     nextUrl = request.GET.get('next')
     print("Next URL: " + nextUrl)
     #return redirect(nextUrl)
     return HttpResponse(nextUrl)
+'''
 
 @login_required    
 def user_home(request, username):
@@ -230,6 +233,10 @@ def modify_questions(request, eventname):
     qn_formset = modelformset_factory(Question, fields = ('qn_text', 'visible_to'), extra=0)
     initial_forms = Question.objects.filter(event_for = event).order_by('pk')
     formset = qn_formset(queryset = initial_forms, prefix = 'questions')
+    
+    for qn_form in formset:
+        qn_form.fields['visible_to'] = VisibleToVendorField(queryset = None, event = event)
+        
     choice_formset = modelformset_factory(Choice, fields = ('choice_text',), extra=0)
     initial_choices_forms = [Choice.objects.filter(qn_for=questions[index]) for index in range(len(questions))]
     c_formsets = [choice_formset(queryset = initial_choices_forms[index], prefix = 'choices-' + str(index)) for index in range(len(questions))]
@@ -238,10 +245,12 @@ def modify_questions(request, eventname):
     
     if request.method == "POST":
 
-        print("Massive post body: " + str(request.POST))
         # Keep track of what's modified and what's new
         # 1) Validation of qn_text and visible_to fields
         submitted_formset = qn_formset(request.POST, initial=initial_forms, prefix = 'questions')
+        for form in submitted_formset:
+            form.fields['visible_to'].required = False
+
         if submitted_formset.is_valid():
             print("Saving of modified questions suceeded!")
             # Save questions
@@ -266,7 +275,11 @@ def modify_questions(request, eventname):
             return redirect(view_questions, eventname=eventname)
         
         print("Errors in question forms: ")
-        [print(form_errors) for form_errors in submitted_formset.errors]
+        errors_str = ""
+        for form in submitted_forms:
+            errors_str += form.errors + "\n"
+            print(form.errors)
+        messages.warning(request, errors_str)
         # Add error message
         return redirect(modify_questions, eventname=eventname)
     else:
@@ -310,7 +323,8 @@ def add_qn_new_event(request):
     if request.method != "POST":
         return HttpResponse(content="This URL is for POST requests only.", status=200)
 
-    user_ordered_events = Event.adi.owners.all().order_by('pk')
+    user = User.objects.filter(username=request.user.username)[0]
+    user_ordered_events = user.owners.all().order_by('pk')
     if len(user_ordered_events) == 0:
         print("User has not created any events yet.")
         return HttpResponse(content="No event found for this user", status = 404, reason = "You have no events")
@@ -320,8 +334,13 @@ def add_qn_new_event(request):
     # validate qns, save with commit=false
     #errors = []
     valid_qns = []
-    print("Post data: " + str(request.POST))
-    for new_qn_json in request.POST:
+    print("Post body: " + str(request.body))
+    body_unicode = request.body.decode('utf-8')
+    body = json.loads(body_unicode)
+    print("Parsed body: " + str(body))
+    #print("Post data: " + str(request.POST))
+    #for new_qn_json in request.POST:
+    for new_qn_json in body:
         new_qn_form = QuestionForm(new_qn_json)
         if new_qn_form.is_valid() :
             new_qn = new_qn_form.save(commit=False)
@@ -334,8 +353,8 @@ def add_qn_new_event(request):
     if len(valid_qns) > 0:
         for valid_qn in valid_qns:
             valid_qn.save() 
-            print("Saved question %s", valid_qn.qn_text)
-    user_home_url = "/eventSystem/user/%s"%request.user
+            print("Saved question %s"%valid_qn.qn_text)
+    user_home_url = "/eventSystem/users/%s"%request.user
     print("Saved all questions, about to redirect user to his home page %s"%user_home_url)
     return JsonResponse({'redirect_to':user_home_url})
     

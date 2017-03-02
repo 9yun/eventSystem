@@ -5,6 +5,7 @@ var __working_choices_id = "working_choices_id";
 var __cancel_button_id = "cancel_button_id";
 var __question_div_id = "div_question_";
 var __approved_questions = [];
+var CSRF_TOKEN;
 
 num_total_questions = 1;
 
@@ -12,10 +13,10 @@ num_total_questions = 1;
 // AJAX //
 //////////
 function submitForm(element) {
-    element.preventDefault();
     if (!allValidate()) {
         return false;
     }
+    
     var has_sent_qns = false;
     var xhttp = new XMLHttpRequest();
     xhttp.open(element.method, element.action, true);
@@ -24,6 +25,7 @@ function submitForm(element) {
         if (this.readyState == 4 && this.status == 200) {
             if (has_sent_qns) {
                 // Redirect
+		console.log(this.responseText);
                 var rsp = JSON.parse(this.responseText);
                 var to_redir = rsp.redirect_to;
                 if (to_redir != null) {
@@ -33,8 +35,10 @@ function submitForm(element) {
                 }
             } else {
                 // Event saved on server, begin sending questions
-                xhttp.open("POST", "/eventSystem/add_new_questions/", true);
-                xhttp.send(JSON.stringify(__approved_questions))
+		xhttp.open("POST", "/eventSystem/add_new_questions/", true);
+		xhttp.setRequestHeader("X-CSRFToken", CSRF_TOKEN);
+		xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+		xhttp.send(JSON.stringify(__approved_questions));
                 has_sent_qns = true;
             }
         } else if (this.readyState == 4 && this.status != 200) {
@@ -103,14 +107,16 @@ function validateTime() {
 }
 
 function Question(qnText, qnType, Choices, qnNumber) {
-    this.qnText = qnText;
+    //this.qnText = qnText;
+    this.qn_text = qnText;
     this.qnType = qnType;
     this.Choices = Choices;
     this.qnNumber = qnNumber;
 }
 
 function WorkingMC() {
-    this.qnText = '';
+    //this.qnText = '';
+    this.qn_text = '';
     this.Choices = [];
 }
 
@@ -323,11 +329,13 @@ function VerifyOpenQuestion() {
     var question = new Question(document.getElementById(__working_question_id).value,
         'Open', [],
         num_total_questions);
-    if (question.qnText === '') {
-        return;
+    //if (question.qnText === '') {
+    if (question.qn_text === '') {
+	return;
     }
     // Check if internal duplicate
-    if (isDuplicate(question.qnText)) {
+    //if (isDuplicate(question.qnText)) {
+    if (isDuplicate(question.qn_text)) {
         return;
     }
     // TODO: Add AJAX here? Yeah probs
@@ -342,11 +350,13 @@ function VerifyChoiceQuestion(mco) {
     var question = new Question(document.getElementById(__working_question_id).value,
         'Choice', [],
         num_total_questions);
-    if (question.qnText === '') {
-        return;
+    //if (question.qnText === '') {
+    if (question.qn_text === '') {
+	return;
     }
     // Check if internal duplicate
-    if (isDuplicate(question.qnText)) {
+    //    if (isDuplicate(question.qnText)) {
+    if (isDuplicate(question.qn_text)) {
         return;
     }
     // Check the choices
@@ -389,7 +399,7 @@ function EnableNewQuestions() {
 
 function isDuplicate(qnText) {
     for (i = 0; i < __approved_questions.length; i++) {
-        if (qnText === __approved_questions[i].qnText) {
+        if (qnText === __approved_questions[i].qn_text) {
             alert("Duplicate question - please submit another");
             document.getElementById(__working_question_id).value = '';
             document.getElementById(__working_question_id).placeholder = "Submit a different question";
@@ -433,7 +443,7 @@ function GenOpenQuestionFromHtml(question) {
     // Get label
     var label = GetQNumberLabel(question);
     // Get Question text
-    var question_text = QuestionTextToHtmlLabel(question.qnText);
+    var question_text = QuestionTextToHtmlLabel(question.qn_text);   
     // Get Delete button
     var db = GetDeleteButton();
     db.onclick = function () {
@@ -465,7 +475,7 @@ function GenChoiceQuestionFromHtml(question) {
     // Get label
     var label = GetQNumberLabel(question);
     // Get Question text
-    var question_text = QuestionTextToHtmlLabel(question.qnText);
+    var question_text = QuestionTextToHtmlLabel(question.qn_text); 
     // Get Delete button
     var db = GetDeleteButton();
     db.onclick = function () {
@@ -518,7 +528,7 @@ function GenChoiceQuestionFromHtml(question) {
 
 $(function() {
 
-
+    alert("Inside weird wrapped function");
     // This function gets cookie with a given name
     function getCookie(name) {
 	var cookieValue = null;
@@ -536,6 +546,8 @@ $(function() {
 	return cookieValue;
     }
     var csrftoken = getCookie('csrftoken');
+    CSRF_TOKEN = csrftoken;
+    console.log("Got cookie! It is " + csrftoken);
 
         /*
     The functions below will create a header with csrftoken
@@ -559,13 +571,40 @@ $(function() {
 	    !(/^(\/\/|http:|https:).*/.test(url));
     }
 
+    /*
     $.ajaxSetup({
 	beforeSend: function(xhr, settings) {
 	    if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
 		// Send the token to same-origin, relative URLs only.
 		// Send the token only if the method warrants CSRF protection
 		// Using the CSRFToken value acquired earlier
+		alert("Setting request header!");
 		xhr.setRequestHeader("X-CSRFToken", csrftoken);
+	    }
+	}
+    });
+    */
+    $.ajaxSetup({
+	beforeSend: function(xhr, settings) {
+	    function getCookie(name) {
+		var cookieValue = null;
+		if (document.cookie && document.cookie != '') {
+		    var cookies = document.cookie.split(';');
+		    for (var i = 0; i < cookies.length; i++) {
+			var cookie = jQuery.trim(cookies[i]);
+			// Does this cookie string begin with the name we want?
+			if (cookie.substring(0, name.length + 1) == (name + '=')) {
+			    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+			    break;
+			}
+		    }
+		}
+		return cookieValue;
+	    }
+	    if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+		// Only send the token to relative URLs i.e. locally.
+		var cookie = getCookie('csrftoken');
+		xhr.setRequestHeader("X-CSRFToken", cookie);
 	    }
 	}
     });

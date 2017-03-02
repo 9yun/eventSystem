@@ -110,7 +110,7 @@ class Question(models.Model):
 
     #visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}) # Tracks which vendors can see the responses to the question
     #visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = self.get_vendors_set) 
-    visible_to = models.ManyToManyField(User, related_name="visble_to")
+    visible_to = models.ManyToManyField(User, related_name="visible_to")
     
     def set_visible_to(self, vendors): # rewrites the entire visible_to set, implicitly ignores any passed in vendor who is not registered as a vendor of the event
         current_visible_to = self.visible_to.all()

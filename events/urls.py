@@ -22,5 +22,5 @@ urlpatterns = [
     url(r'^eventSystem/', include('eventSystem.urls')),
     url(r'^admin/', admin.site.urls),
     #url(r'^accounts/login/?next=/eventSystem/users/(?P<username>[a-zA-Z0-9_]+)/$', eventSystem.views.user_home, name='user_home'),
-    url(r'^accounts/login/', eventSystem.views.login_redirect),
+    #url(r'^accounts/login/', eventSystem.views.login_redirect),
 ]
