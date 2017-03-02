@@ -133,8 +133,9 @@ def create_event(request, username):
         if not newEventForm.is_valid():
             print("Invalid event!")
             print(newEventForm.errors)
-            messages.error(request, "Invalid Event! Please try different event name and enter date in valid format such as MM/DD/YY HH:MM:SS")
-            return redirect(create_event, username=username)
+            #messages.error(request, "Invalid Event! Please try different event name and enter date in valid format such as MM/DD/YY HH:MM:SS")
+            #return redirect(create_event, username=username)
+            return HttpResponse(status = 400, content = "Invalid Event! Please try different event name and enter date/time in valid format such as MM/DD/YY or HH:MM:SS respectively")
         print("Valid event!")
         creator = User.objects.filter(username = username)[0] # Safe to assume at this point that a user will be found since login_required decorator has been enforced
         newEvent = newEventForm.save()
@@ -143,7 +144,7 @@ def create_event(request, username):
         print("Owners of new event: " + str(newEvent.getOwners()))
         print("Vendors of new event: " + str(newEvent.getVendors()))
         print("Guests of new event: " + str(newEvent.getGuests()))
-        return redirect(user_home, username=username)
+        return HttpResponse(status = 200) 
     else:
         #form = EventForm({})
         form = EventForm()

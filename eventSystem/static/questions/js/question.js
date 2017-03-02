@@ -8,6 +8,85 @@ var __approved_questions = [];
 
 num_total_questions = 1;
 
+//////////
+// AJAX //
+//////////
+function submitForm(element) {
+    if (!allValidate()) {
+      return false;
+    }
+    var xhttp = new XMLHttpRequest();
+    xhttp.open (element.method, element.action, true);
+    xhttp.send(new FormData(element));
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        // Event saved on server, begin sending questions
+        // TODO: API Calls here
+      } else if (this.readyState == 4 && this.status != 200) {
+        // The event could not be saved...write the error message
+        var error_div = document.getElementById("error_div");
+        // Create the append the error message
+        var p = document.createElement("p");
+        p.className = "alert";
+        p.innerHTML = this.responseText;
+        error_div.appendChild(p);
+      }
+    }
+    return false;
+}
+
+function allValidate() {
+    if (!validateTime()) {
+        return false;
+    }
+    if (!validateEventName()) {
+        return false;
+    }
+    return true;
+}
+
+function validateEventName() {
+    var x = document.getElementsByName("eventname");
+    x = x[0];
+    re = /[^a-zA-Z0-9_ ]/g;
+    if(x.value.match(re)) {
+      alert("Event name may only contain letters, numbers, underscores and spaces.");
+      x.focus();
+      x.style="color:red";
+      return false;
+    }
+    return true;
+}
+
+function validateTime() {
+  var x = document.getElementsByName("start_time");
+  x = x[0];
+  re = /^(\d{1,2}):(\d{2})\s*([ap]m)/i;
+  if (x.value != '' && !x.value.match(re)) {
+    alert("Invalid time format: " + x.value);
+    x.focus();
+    x.value = "HH:MM AM/PM";
+    x.style = "color:red";
+    return false;
+  }
+  // Modify it for the server
+  var matches = re.exec(x.value);
+  x.value = matches[1] + ":" + matches[2] + " " + matches[3];
+  x = document.getElementsByName("end_time");
+  x = x[0];
+  re = /^(\d{1,2}):(\d{2})\s*([ap]m)/i;
+  if (x.value != '' && !x.value.match(re)) {
+    alert("Invalid time format: " + x.value);
+    x.focus();
+    x.value = "HH:MM AM/PM";
+    x.style = "color:red";
+    return false;
+  }
+  matches = re.exec(x.value);
+  x.value = matches[1] + ":" + matches[2] + " " + matches[3];
+  return true;
+}
+
 function Question(qnText, qnType, Choices, qnNumber) {
     this.qnText = qnText;
     this.qnType = qnType;
