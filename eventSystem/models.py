@@ -96,6 +96,9 @@ class Question(models.Model):
     qn_text = models.CharField(max_length = 200)
     event_for = models.ForeignKey(Event, on_delete = models.CASCADE)
 
+    def __str__(self):
+        return self.qn_text
+    
     def get_responses(self):
         return self.response_set.all()
 
@@ -108,8 +111,6 @@ class Question(models.Model):
     def get_vendors_set(self):
         return {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}
 
-    #visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}) # Tracks which vendors can see the responses to the question
-    #visible_to = models.ManyToManyField(User, related_name="visble_to", limit_choices_to = self.get_vendors_set) 
     visible_to = models.ManyToManyField(User, related_name="visible_to")
     
     def set_visible_to(self, vendors): # rewrites the entire visible_to set, implicitly ignores any passed in vendor who is not registered as a vendor of the event
@@ -130,32 +131,14 @@ class Question(models.Model):
             return True
         return False
 
-    '''
-    def modify_choices(self, choices): # allows choice objects to be manipulated through QuestionForms that can be held in a single QuestionFormSet
-        current_choices
-        '''
-        
-
-    '''
-class ChoiceQuestion(Question): # Also needs to keep track of which response has been chosen by which user
-    #next_id = 0 # monotonically increasing counter
- 
-    def getRespondersForChoice(self, choice_id):
-        # filter response_set by choice_id to retrieve responses which are going to be deleted, then email users linked to those responses
-        return self.choiceresponse_set.filter(choice_id = choice_id)
-    def gen_choice_id(self): # should be called before saving each ChoiceResponse to DB
-        next_id += 1
-        return next_id
-    def save_choice_response(self, choice_response): # call this function instead of choice_response.save()
-        choice_response.choice_id = gen_choice_id() 
-        choice_response.choice_id.save()
-    '''
-
 class Choice(models.Model): # For creation of question and tracking of response
     choice_text = models.CharField(max_length = 100, unique = False)
     #qn_for = models.ForeignKey(ChoiceQuestion, on_delete = models.CASCADE, primary_key = False)
     qn_for = models.ForeignKey(Question, on_delete = models.CASCADE, primary_key = False)
     # Is there a clear handle on a choice object from the front-end?
+
+    def __str__(self):
+        return self.choice_text
     
     def getChoosers(self): # helper for below func
         return self.choiceresponse_set.all()
@@ -181,14 +164,10 @@ class Response(models.Model):
         abstract = True
 
 class OpenResponse(Response):
-    #qn_for = models.ForeignKey(Question, on_delete = models.CASCADE)
     response_value = models.CharField(max_length = 200, blank = False, default="", error_messages={'required': 'Please answer the question'})
     
 class ChoiceResponse(Response):
-    #qn_for = models.ForeignKey(ChoiceQuestion, on_delete = models.CASCADE)
-    response_value = models.NullBooleanField() # More flexible than BooleanField?
-    #choice_id = models.PositiveSmallIntegerField() # Used to track who should be notified when a given response is deleted
-    #choice_for = models.OneToOneField(Choice, on_delete = models.CASCADE, default = None, primary_key = False)
+    response_value = models.ManyToManyField(Choice, related_name='choices') # Use ManyToManyField instead of ForeignKey to allow multiple responses?
     choice_for = models.ForeignKey(Choice, on_delete = models.CASCADE)
     
 # Form Classes
@@ -245,7 +224,7 @@ class OpenResponseForm(ModelForm):
         
 
 class ChoiceResponseForm(ModelForm):
-    response_value = forms.NullBooleanField()
+    response_value = forms.ModelMultipleChoiceField(queryset = Choice.objects.all(), widget = CheckboxSelectMultiple(), required = True)
     class Meta:
         model = ChoiceResponse
         fields = ['response_value']    

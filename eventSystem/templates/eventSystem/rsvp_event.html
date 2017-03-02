@@ -7,14 +7,13 @@
   <body>
       <form method="post">
 	{% csrf_token %}
-	{{ formset_management }}
-	{% for openresponse_form, choiceresponse_formset in formset %}
+	{{ open_formset_management }}
+	{{ choice_formset_management }}
+	{% for qn, openresponse_form, choiceresponse_form in formset %}
 	<div>
-	  {% if choiceresponse_formset %}
-	    {{ choiceresponse_formset.management_form }}
-	    {% for choiceresponse_form in choiceresponse_formset %}
-	      <div>{{ choiceresponse_form }}</div>
-	    {% endfor %}
+	  <div> {{ qn.qn_text }}</div>
+	  {% if choiceresponse_form %}
+	    <div>{{ choiceresponse_form }}</div>
 	  {% else %}
 	    <div>{{ openresponse_form }}</div>
 	  {% endif %} 
