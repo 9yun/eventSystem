@@ -1,49 +1,86 @@
 <html>
-  <head>
-    <title>{{ user.username }} | eventSystem</title>
-    <h1>Username: {{ user.username }}</h1>
-    <h3>Email: {{ user.email }}</h3>
-  </head>
-  
+
+<head>
+  <title>Events Unlimited | {{ user.username }}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static "user_home/css/user_home.css" %}"> {% load static %}
+  <link rel="stylesheet" href="{% static "user_home/css/accordion.css" %}">
+  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Berkshire+Swash' rel='stylesheet' type='text/css'>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+
 <body>
-{% if owns_events %}
-<p>Events owned by {{ noun }}:</p>
-<ul>
-  {% for event in owned_events %}
-  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> on {{ event.date }} from {{ event.start_time }} to {{ event.end_time }}</li>
-  {% endfor %}
-</ul>
+  <div class="title">
+    <h1>{{ user.username }} ({{ user.email }})</h1>
+  </div>
+  <div id="accordion" style="text-align: center">
+    {% if owns_events %}
+    <h3 class="fancy_text_accordion">Events Owned by {{ noun }}</h3>
+    <div>
+      <hr> {% for event in owned_events %}
+      <a href="{% url 'event_home' event.eventname %}">
+        <label class="event">{{ event.eventname }}</label></a><br>
+      <label class="fancy_text">When:</label><br>
+      <label class="fancy_text_small"><i>{{ event.date }}</i></label><br>
+      <label class="fancy_text">Time:</label><br>
+      <label class="fancy_text_small"><i>{{ event.start_time}} - {{ event.end_time }}</i></label><br>
+      <hr> {% endfor %}
+    </div>
+    {% else %}
+    <h3 class="fancy_text_accordion">No events currently owned by {{ noun }}</h3>
+    <div></div>
+    {% endif %} {% if has_vendor_events %}
+    <h3 class="fancy_text_accordion">Vendor for:</h3>
+    <div>
+      <hr> {% for event in vendor_events %}
+      <a href="{% url 'event_home' event.eventname %}">
+        <label class="event">{{ event.eventname }}</label></a><br>
+      <label class="fancy_text">When:</label><br>
+      <label class="fancy_text_small"><i>{{ event.date }}</i></label><br>
+      <label class="fancy_text">Time:</label><br>
+      <label class="fancy_text_small"><i>{{ event.start_time}} - {{ event.end_time }}</i></label><br>
+      <hr> {% endfor %}
+    </div>
+    {% else %}
+    <h3 class="fancy_text_accordion">Not a vendor for any events</h3>
+    <div></div>
+    {% endif %} {% if has_guest_events %}
+    <h3 class="fancy_text_accordion">Guest for:</h3>
+    <div>
+      <hr> {% for event in guest_events %}
+      <a href="{% url 'event_home' event.eventname %}">
+        <label class="event">{{ event.eventname }}</label></a><br>
+      <label class="fancy_text">When:</label><br>
+      <label class="fancy_text_small"><i>{{ event.date }}</i></label><br>
+      <label class="fancy_text">Time:</label><br>
+      <label class="fancy_text_small"><i>{{ event.start_time}} - {{ event.end_time }}</i></label><br>
+      <hr> {% endfor %}
+    </div>
+    {% else %}
+    <h3 class="fancy_text_accordion">Not a guest for any events</h3>
+    <div></div>
+    {% endif %}
+  </div>
+  {% if noun == "You" %}
+  <div class="input_container">
+    <form action="{% url 'create_event' user.username %}">
+      <input type="submit" value="Create an Event" class="fancy create_event" />
+    </form>
+    <form action="{%url 'user_logout' %}">
+      <input type="submit" value="Logout" class="fancy logout" />
+    </form>
+  </div>
+  {% endif %}
 
-{% else %}
-<p>No events currently owned by {{ noun }}</p>
+  <script>
+    $("#accordion").accordion();
+  </script>
 
-{% endif %}
 
-{% if has_vendor_events %}
-  <p>Vendor for:</p>
-  <ul>
-    {% for event in vendor_events %}
-      <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> on {{ event.date }} from {{ event.start_time }} to {{ event.end_time }}</li>
-    {% endfor %}
-  </ul>
-{% else %}
-<p>Not a vendor for any events</p>
-{% endif %}
-
-{% if has_guest_events %}
-<p>Guest for:</p>
-<ul>
-  {% for event in guest_events %}
-  <li><a href="{% url 'event_home' event.eventname %}">{{ event.eventname }}</a> on {{ event.date }} from {{ event.start_time }} to {{ event.end_time }}</li>
-  {% endfor %}
-</ul>
-{% else %}
-<p>Not a guest for any events</p>
-{% endif %}
-
-{% if noun == "You" %}
-  <p><a href="{% url 'create_event' %}">Create an event</a></p>
-  <p><a href="{%url 'user_logout' %}">Logout</a></p>
-{% endif %}
 </body>
+
 </html>
