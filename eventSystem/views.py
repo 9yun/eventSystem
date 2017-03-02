@@ -93,6 +93,9 @@ def login_redirect(request):
 
 @login_required    
 def user_home(request, username):
+    # Verify that request user is same as user whose home page is requested
+    if request.user.username != username:
+        return HttpResponse(content="Sorry, you are not %s. Only the user himself can view his home page."%username, status=401, reason="Unauthorized")
     # Retrieve user from DB
     userQueryResult = User.objects.filter(username=username)
     if len(userQueryResult) == 0:
@@ -160,8 +163,8 @@ def create_event(request):
 def view_questions(request, eventname):
     # Must verify that request.user is either in event.owners OR event.vendors
        # if not in owners and in vendors, then can still view all questions but can only view selected responses?
-    if not (user_owns_event(request, eventname) or user_vendor_for_event(request, username)):
-        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
+    if not (user_owns_event(request, eventname) or user_vendor_for_event(request, eventname) or user_guest_for_event(request, eventname)):
+        return HttpResponse(content="Sorry, you are unrelated to this event and therefore cannot view its questions", status=401, reason="Unauthorized")
     # Event existence and verification of permissions done at this point
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404
     event_name = event.eventname
@@ -182,7 +185,7 @@ def view_questions(request, eventname):
 def add_questions(request, eventname):
     # must be owner of event, not even guest
     if not user_owns_event(request, eventname):
-        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
+        return HttpResponse(content="Sorry, only the owners can modify questions", status=401, reason="Unauthorized")
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404  
     if request.method == "POST":
         # TO-DO : save qns to db... All validation already done on client side?
@@ -217,11 +220,12 @@ def add_questions(request, eventname):
         new_qn_form.fields['visible_to'] = VisibleToVendorField(queryset = None, event = event)
         context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'questions': questions, 'has_questions': has_questions, 'new_qn_form': new_qn_form}                
         return render(request, 'eventSystem/add_questions.html', context)
-    
+
+@login_required    
 def modify_questions(request, eventname):
     # must be owner of event, not even guest
     if not user_owns_event(request, eventname):
-        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
+        return HttpResponse(content="Sorry, only owners can modify questions", status=401, reason="Unauthorized")
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404 
     event_name = event.eventname
     date = event.date
@@ -289,9 +293,10 @@ def modify_questions(request, eventname):
         return render(request, 'eventSystem/modify_questions.html', context)
     
     # For adding/removing questions and users to event
+@login_required
 def modify_event(request, eventname):
     if not user_owns_event(request, eventname):
-        return HttpResponse(content="401 Unauthorized", status=401, reason="Unauthorized")
+        return HttpResponse(content="Sorry, only owners can modify the event", status=401, reason="Unauthorized")
     oldEvent = Event.objects.filter(eventname=eventname)[0] # Can assume at this point that event exists in DB, since checks were made above for 404 
     if request.method == "POST":
         # Convert names into user objects
@@ -314,6 +319,161 @@ def modify_event(request, eventname):
         context = {'event' : oldEvent, 'form' : changeForm, 'user' : request.user}
         return render(request, 'eventSystem/modify_event.html', context)
 
+@login_required
+def rsvp_event(request, eventname): # Can be used for adding and updating responses
+    if not user_guest_for_event(request, eventname):
+        return HttpResponse(content="Sorry, you are not invited to this event.", status = 401, reason = "Unauthorized")
+    # We now know user is invited
+    user = User.objects.filter(username=request.user.username)[0]
+    event = Event.objects.filter(eventname=eventname)[0]
+    # Construct formset for responses with user's initial responses for this event
+    current_user_openresponses = user.openresponse_set.all().filter(qn_for__event_for=event).order_by('pk') # OpenResponses filled by user for this event, in chronological order (Switch to qn order later if possible)
+    current_user_choiceresponses = user.choiceresponse_set.all().filter(qn_for__event_for=event).order_by('pk') # Same, but for ChoiceResponses
+    openresponse_formset_creator = modelformset_factory(OpenResponse, fields = ('response_value',), extra=0)
+    openresponse_formset = openresponse_formset_creator(queryset = current_user_openresponses, prefix = 'open')
+    choiceresponse_formset_creator = modelformset_factory(ChoiceResponse, fields= ('response_value',), extra=0)
+    all_formsets = [] #List of tuples, each tuple represents a question, first element of tuple is an openresponse, 2nd element is list of choice responses
+    event_questions = event.question_set.all().order_by('pk')
+    openresponse_index = 0
+    choiceresponse_index = 0
+    update = False
+    openresponse_qns = [] # Used for setting of qn_for fields
+    choiceresponse_qns = []
+    choiceresponse_choices = []
+    choiceresponse_formsets = []
+    
+    if len(current_user_choiceresponses) > 0 or len(current_user_openresponses) > 0: # submissions are only allowed for all event qns at a time, so this means user is modifying his responses
+        update = True
+        for event_qn_index in range(len(event_questions)):
+            event_qn = event_questions[event_qn_index]
+            num_choices = len(event_qn.choice_set.all())
+            if num_choices > 0 : # Retrieve user's response for that choice
+                #all_formsets.append((None, [ChoiceResponseForm(instance=choice_response) for choice_response in current_user_choiceresponses.filter(qn_for=event_qn).order_by('pk')])) # in case we support multiple choices per question
+                qn_choiceresponse_formset = choiceresponse_formset_creator(queryset = current_user_choiceresponses.filter(qn_for=event_qn).order_by('pk'), prefix = 'choice-' + str(choiceresponse_index))
+                all_formsets.append((None, qn_choiceresponse_formset))
+                #choiceresponse_qns.append(event_qn)
+                choiceresponse_index += 1
+            else : # Retrieve user's response for that question
+                #all_formsets.append((OpenResponseForm(instance=current_user_openresponses.filter(qn_for=event_qn)[0], None))
+                all_formsets.append((openresponse_formset[openresponse_index], None))
+                openresponse_index += 1
+                #openresponse_qns.append(event_qn)
+    else: # User is answering afresh, need to generate new form with right number of OpenResponse and ChoiceResponse objects
+        needs_openresponse_forms = []
+        num_openresponse_qns = 0
+        #choiceresponse_formsets = []
+        # iterate through questions of this event and their correspondent choicesets to know how many openresponse and choiceresponse forms to render
+        for event_qn_index in range(len(event_questions)):
+            event_qn = event_questions[event_qn_index]
+            num_choices = len(event_qn.choice_set.all())
+            print("Number of choices for qn %s :"%event_qn.qn_text)
+            print(str(num_choices))
+            if num_choices > 0 : # Choice question, create choice response forms
+                choiceresponse_formset_creator.extra = num_choices
+                qn_choiceresponse_formset = choiceresponse_formset_creator(queryset = ChoiceResponse.objects.none(), prefix = 'choice-' + str(choiceresponse_index))
+                #all_formsets.append((None, qn_choiceresponse_formset))
+                choiceresponse_formsets.append(qn_choiceresponse_formset)
+                needs_openresponse_forms.append(False)
+                choiceresponse_qns.append(event_qn)
+                choiceresponse_choices.append(event_qn.choice_set.all().order_by('pk'))
+                choiceresponse_index += 1
+            else : # Open question, just append a single open response form
+                #all_formsets.append((OpenResponseForm(), None))
+                #all_formsets.append((openresponse_formset[openresponse_index], None))
+                choiceresponse_formsets.append(None)
+                needs_openresponse_forms.append(True)
+                #openresponse_index += 1
+                openresponse_qns.append(event_qn)
+                num_openresponse_qns += 1
+        #num_openresponse_qns = len(openresponse_qns)
+        print(num_openresponse_qns)
+        openresponse_formset_creator.extra = num_openresponse_qns
+        openresponse_formset = openresponse_formset_creator(queryset = OpenResponse.objects.none(), prefix = 'open')
+        print("Length of open response formset:" + str(len(openresponse_formset)))
+        print("Length of choice response formsets:" + str(len(choiceresponse_formsets)))
+        openresponses_added = 0
+        for index in range(len(needs_openresponse_forms)) :
+            #openresponse_chosen = None if not needs_openresponse_forms[index] else 
+            if needs_openresponse_forms[index]:
+                all_formsets.append((openresponse_formset[openresponses_added], choiceresponse_formsets[index]))
+                openresponses_added += 1
+            else:
+                all_formsets.append((None, choiceresponse_formsets[index]))
+        
+    formset_management = openresponse_formset.management_form
+
+    print("Choice response questions: " + str(choiceresponse_qns))
+    print("Open response questions: " + str(openresponse_qns))
+    [print("Choices for choiceqn: " + str(choices)) for choices in choiceresponse_choices]
+    print("Length of choice response formsets: " + str(len(choiceresponse_formsets)))
+    
+    if request.method == 'POST' :
+        # Validate open responses
+        submitted_open_responses = openresponse_formset_creator(request.POST, initial=current_user_openresponses, prefix='open')
+        if submitted_open_responses.is_valid() :
+            print("Open responses are valid!")
+            if update :
+                new_open_responses = submitted_open_responses.save() # done with open responses, since their qn_for and user_from are already in db
+                print("Saved all modifications to open responses")
+                # now for choice responses
+                #for choice_question_index in range(len(choiceresponse_formsets)):
+                for choice_question_index in range(len(choiceresponse_qns)) :
+                    choiceresponse_qn = choiceresponse_qns[choice_question_index]
+                    submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial = current_user_choiceresponses.filter(qn_for=choiceresponse_qn).order_by('pk'), prefix = 'choice-' + str(choice_question_index))
+                    if not submitted_choice_responses.is_valid() :
+                        print("Errors in choice responses")
+                        [print(submitted_choice_response.errors) for submitted_choice_response in submitted_choice_responses]
+                        return redirect(rsvp_event, eventname)
+                    new_choice_responses = submitted_choice_responses.save() # done here, choice_for field also set from before
+                    print("Done with choice response question " + str(choice_question_index))
+                print("Done with modified responses!")
+                return redirect(user_home, username=request.user.username)
+            else: # need to save user_from, qn_for fields as well as choice_for field for choiceresponses              
+                #new_open_responses = submitted_open_responses.save(commit=False)
+                #for open_response in new_open_responses:
+                for open_response_form_index in range(len(submitted_open_responses)) : # need to iterate through to get matching qn index, since returned and original are of different lengths
+                    open_response_form = submitted_open_responses[open_response_form_index]
+                    new_open_response = open_response_form.save(commit=False)
+                    new_open_response.user_from = user
+                    new_open_response.qn_for = openresponse_qns[open_response_form_index]
+                    print("Saving new open response %s"%new_open_response.response_value)
+                    new_open_response.save()
+                    print("About to commit new open response to db")
+                    open_response_form.save_m2m()
+                print("Done saving all new open responses")
+                # now for choice responses
+                #for choice_question_index in range(len(choiceresponse_formsets)):
+                for choice_question_index in range(len(choiceresponse_qns)) :
+                    choiceresponse_qn = choiceresponse_qns[choice_question_index]
+                    submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial = current_user_choiceresponses.filter(qn_for=choiceresponse_qn).order_by('pk'), prefix = 'choice-' + str(choice_question_index))
+                    if not submitted_choice_responses.is_valid() :
+                        print("Errors in choice responses")
+                        [print(submitted_choice_response.errors) for submitted_choice_response in submitted_choice_responses]
+                        return redirect(rsvp_event, eventname)
+                    #new_choice_responses = submitted_choice_responses.save(commit=False)
+                    for choice_response_form_index in range(len(submitted_choice_responses)) :
+                        choice_response_form = submitted_choice_responses[choice_response_form_index]
+                        new_choice_response = choice_response_form.save(commit=False)
+                        new_choice_response.user_from = user
+                        new_choice_response.qn_for = choiceresponse_qns[choice_question_index]
+                        new_choice_response.choice_for = choiceresponse_choices[choice_question_index][choice_response_form_index]
+                        print("Saving choice response %s"%new_choice_response.response_value)
+                        new_choice_response.save()
+                        print("About to commit new choice response to db")
+                        choice_response_form.save_m2m()
+                    print("Done with choice response question " + str(choice_question_index))
+                print("Done with new responses!")
+                return redirect(user_home, username=request.user.username)
+                
+        else: # open responses invalid
+            print("Errors in open responses")
+            [print(open_response_form.errors) for open_response_form in submitted_open_responses]
+            return redirect(rsvp_event, eventname)
+    else:
+        #context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'formset': all_formsets, 'formset_management': formset_management}
+        context = {'event_name': event.eventname, 'event_date': event.date, 'event_start': event.start_time, 'event_end': event.end_time, 'user_name' : user.username,'formset': all_formsets, 'formset_management': formset_management}
+        return render(request, 'eventSystem/rsvp_event.html', context)
+    
 @login_required    
 def add_qn_new_event(request):
     if not hasattr(request, 'user') or not hasattr(request.user, 'username'):
@@ -334,6 +494,7 @@ def add_qn_new_event(request):
     # validate qns, save with commit=false
     #errors = []
     valid_qns = []
+    qn_choices = []
     print("Post body: " + str(request.body))
     body_unicode = request.body.decode('utf-8')
     body = json.loads(body_unicode)
@@ -347,13 +508,34 @@ def add_qn_new_event(request):
             # set event of qns to this event     
             new_qn.event_for = user_latest_event
             valid_qns.append(new_qn)
+            # include choices
+            new_qn_choices = new_qn_json["Choices"]
+            qn_choices.append(new_qn_choices)
         else:
             return HttpResponse(content="Invalid question detected. Not saving. Cause for rejection: %s"%new_qn_form.errors, status=200)
     # Save to DB
     if len(valid_qns) > 0:
-        for valid_qn in valid_qns:
+        for valid_qn_index in range(len(valid_qns)):
+            valid_qn = valid_qns[valid_qn_index]
             valid_qn.save() 
             print("Saved question %s"%valid_qn.qn_text)
+            valid_qn_choices = qn_choices[valid_qn_index]
+            if len(valid_qn_choices) > 0:
+                print("Multiple Choice question detected. Saving choices")
+                for choice in valid_qn_choices :
+                    new_choice_form = ChoiceForm({'choice_text':choice})
+                    if not new_choice_form.is_valid() :
+                        print("Not saving choice")
+                    else:
+                        new_choice = new_choice_form.save(commit=False)
+                        new_choice.qn_for = valid_qn
+                        new_choice.save()
+                        print("saved qn, now saving foreign key")
+                        new_choice_form.save_m2m()
+                        print("Saved foreign key!")
+            else:
+                print("Open Response question detected")
+            
     user_home_url = "/eventSystem/users/%s"%request.user
     print("Saved all questions, about to redirect user to his home page %s"%user_home_url)
     return JsonResponse({'redirect_to':user_home_url})
@@ -365,18 +547,33 @@ def user_owns_event(request, eventname):
     if len(eventSet) == 0:
         raise Http404("Event does not exist")
     event = eventSet[0]
+    user = User.objects.filter(username=request.user.username)[0]
+    return event in user.owners.all()
+    '''
     event_owners = event.getOwners()
     event_owners_names = [owner.username for owner in event_owners]
     print("Owners: " + str(event_owners_names))
     return request.user.username in event_owners_names # If user is not owner of this event, cannot view its homepage, only other pages like guest view or vendor view of event
+    '''
 
 def user_vendor_for_event(request, eventname):
     eventSet = Event.objects.filter(eventname = eventname)
     if len(eventSet) == 0:
         raise Http404("Event does not exist")
     event = eventSet[0]
+    user = User.objects.filter(username=request.user.username)[0]
+    return event in user.vendors.all()
+    '''
     event_vendors = event.getVendors()
     event_vendors_names = [vendor.username for vendor in event_vendors]
     print("Vendors: " + str(event_vendors_names))
     return request.user.username in event_vendors_names
+    '''
 
+def user_guest_for_event(request, eventname):
+    eventSet = Event.objects.filter(eventname = eventname)
+    if len(eventSet) == 0:
+        raise Http404("Event does not exist")
+    event = eventSet[0]
+    user = User.objects.filter(username=request.user.username)[0]
+    return event in user.guests.all()

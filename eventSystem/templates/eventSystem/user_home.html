@@ -67,7 +67,7 @@
   </div>
   {% if noun == "You" %}
   <div class="input_container">
-    <form action="{% url 'create_event' user.username %}">
+    <form action="{% url 'create_event' %}">
       <input type="submit" value="Create an Event" class="fancy create_event" />
     </form>
     <form action="{%url 'user_logout' %}">

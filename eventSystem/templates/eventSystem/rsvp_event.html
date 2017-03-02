@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <title>Event | {{ event_name }} | eventSystem</title>
+    <h1>Event Name: {{ event_name }}</h1>
+    <h3>Date & Time: {{ event_date }} from {{ event_start }} to {{ event_end }}</h3>
+  </head>
+  <body>
+      <form method="post">
+	{% csrf_token %}
+	{{ formset_management }}
+	{% for openresponse_form, choiceresponse_formset in formset %}
+	<div>
+	  {% if choiceresponse_formset %}
+	    {{ choiceresponse_formset.management_form }}
+	    {% for choiceresponse_form in choiceresponse_formset %}
+	      <div>{{ choiceresponse_form }}</div>
+	    {% endfor %}
+	  {% else %}
+	    <div>{{ openresponse_form }}</div>
+	  {% endif %} 
+	</div>
+	{% empty %}
+	<p>No questions to answer</p>
+	{% endfor %}
+	<button type="submit">Submit Modifications</button>
+      </form>
+    <p><a href="{% url 'user_home' user_name %}">Back to home</a></p>
+  </body>
+</html>
