@@ -298,6 +298,38 @@ def modify_event(request, eventname):
         context = {'event' : oldEvent, 'form' : changeForm, 'user' : request.user}
         return render(request, 'eventSystem/modify_event.html', context)
 
+@login_required    
+def add_qn_new_event(request):
+    if request.method == "POST":
+        # validate qns, save with commit=false
+        qn_formset = modelformset_factory(Question, fields = ('qn_text', 'visible_to'), extra=0)
+        submitted_formset = qn_formset(request.POST)
+        if submitted_formset.is_valid():
+            print("Questions for new event are valid!")
+            new_event_questions = submitted_formset.save(commit=False)
+            # retrieve user from request
+            if not hasattr(request, 'user') or not hasattr(request.user, 'username'):
+                print("Rejecting request from unknown user")
+                return HttpResponse(content="You are not a registered and logged-in user", status=401, reason="Unauthorized")
+            # get most recent event of user
+            user_ordered_events = Event.adi.owners.all().order_by('pk')
+            if len(user_ordered_events) == 0:
+                print("User has not created any events yet.")
+                return HttpResponse(content="No event found for this user", status = 404, reason = "You have no events")
+            user_latest_event = user_ordered_events[len(user_ordered_events) - 1] # query sets don't allow the -1 indexing for some reason
+            print("Name of event this qn is added to:%s", user_latest_event.eventname)
+            # set event of qns to this event
+            for new_event_qn in new_event_questions:
+                new_event_qn.event_for = user_latest_event
+                # Save to DB
+                new_event_qn.save() 
+                print("Saved question %s", new_event_qn.qn_text)
+            return HttpResponse(content="Success", status = 200)
+    else:
+        return HttpResponse(content="This URL is for POST requests only", status = 200)
+            
+
+    
 
 # Helper function used by event_home and modify_event
 def user_owns_event(request, eventname):
@@ -319,7 +351,7 @@ def user_vendor_for_event(request, eventname):
     event_vendors_names = [vendor.username for vendor in event_vendors]
     print("Vendors: " + str(event_vendors_names))
     return request.user.username in event_vendors_names
-
+'''
 # Inefficient to serve files with django :(
 def get_script(request, script_path):
     with open(script_path,'r') as f:
@@ -328,11 +360,9 @@ def get_script(request, script_path):
         response['Content-Length'] = len(data)
     return response
                                         
-
-
 def get_modify_qns_script(request):
     return get_script(request, "./eventSystem/static/questions/js/modify_questions.js")
 
 def get_add_qns_script(request):
     return get_script(request, "./eventSystem/static/questions/js/question.js")
-    
+''' 
