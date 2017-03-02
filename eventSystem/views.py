@@ -137,7 +137,6 @@ def create_event(request):
             print("Invalid event!")
             print(newEventForm.errors)
             messages.error(request, "Invalid Event! Please try different event name and enter date in valid format such as MM/DD/YY HH:MM:SS")
-            #return redirect(create_event, username=username)
             return redirect(create_event)
         print("Valid event!")
         creator = User.objects.filter(username = username)[0] # Safe to assume at this point that a user will be found since login_required decorator has been enforced
@@ -147,7 +146,7 @@ def create_event(request):
         print("Owners of new event: " + str(newEvent.getOwners()))
         print("Vendors of new event: " + str(newEvent.getVendors()))
         print("Guests of new event: " + str(newEvent.getGuests()))
-        return redirect(user_home, username=username)
+        return HttpResponse(status = 200) 
     else:
         #form = EventForm({})
         form = EventForm()
@@ -361,18 +360,4 @@ def user_vendor_for_event(request, eventname):
     event_vendors_names = [vendor.username for vendor in event_vendors]
     print("Vendors: " + str(event_vendors_names))
     return request.user.username in event_vendors_names
-'''
-# Inefficient to serve files with django :(
-def get_script(request, script_path):
-    with open(script_path,'r') as f:
-        data = f.read()
-        response = HttpResponse(data, content_type='text/javascript')
-        response['Content-Length'] = len(data)
-    return response
-                                        
-def get_modify_qns_script(request):
-    return get_script(request, "./eventSystem/static/questions/js/modify_questions.js")
 
-def get_add_qns_script(request):
-    return get_script(request, "./eventSystem/static/questions/js/question.js")
-''' 

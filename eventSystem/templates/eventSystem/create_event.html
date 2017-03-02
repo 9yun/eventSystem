@@ -6,8 +6,6 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <!-- jQuery library -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-  <!-- Latest compiled JavaScript -->
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   {% load static %}
   <link rel="stylesheet" href="{% static  "events/css/jquery-ui.css" %}"> 
   {% load static %}
@@ -15,9 +13,7 @@
   {% load static %}
   <link rel="stylesheet" href="{% static  "events/css/accordion.css" %}"> 
   {% load static %}
-  <script src="{% static "events/js/allValidate.js" %}" type="text/javascript"></script>
-  {% load static %}
-  <script src="{% static "questions/js/question.js" %}" type="text/javascript"></script>
+  <script src="{% static "questions/js/question.js" %}" type="text/javascript" defer></script>
   <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Berkshire+Swash' rel='stylesheet' type='text/css'>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -37,7 +33,7 @@
   <hr>
 
   <!-- Required forms -->
-  <form method="post" name="input_form" onsubmit="return allValidate();">
+  <form id="main_form" method="post" name="input_form" onsubmit="return submitForm(this);">
     {% csrf_token %}
     <!-- Login forms -->
     <div id="accordion">
@@ -111,13 +107,9 @@
       </div>
     </div>
     <!-- Message handling -->
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tage }}">
-          {{ message|safe }}
-        </div>
-      {% endfor %}
-    {% endif %}
+    <div id="error_div" class="alert alert-{{ message.tage }}">
+
+    </div>
     <div class="input_container">
       <button type="Submit" class="fancy_text_small">Submit</button>
     </div>
@@ -132,6 +124,8 @@
   <script>
     $("#accordion").accordion();
   </script>
+
+</script>
 
 </body>
 
