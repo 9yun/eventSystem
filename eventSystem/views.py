@@ -374,7 +374,7 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
                 choiceresponse_index += 1
                 num_choiceresponse_qns += 1
             else : # Open question, just append a single open response form
-                choiceresponse_formsets.append(None)
+                #choiceresponse_formsets.append(None)
                 needs_openresponse_forms.append(True)
                 openresponse_qns.append(event_qn)
                 num_openresponse_qns += 1
@@ -457,7 +457,7 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
                     new_choice_response = choice_response_form.save(commit=False)
                     new_choice_response.user_from = user
                     new_choice_response.qn_for = choiceresponse_qns[choice_response_form_index]
-                    print("Saving new choice response %s"%new_choice_response.response_value)
+                    
                     new_choice_response.save()
                     print("About to commit new choice response to db")
                     choice_response_form.save_m2m()
@@ -472,6 +472,39 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
         #context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'formset': all_formsets, 'formset_management': formset_management}
         context = {'event_name': event.eventname, 'event_date': event.date, 'event_start': event.start_time, 'event_end': event.end_time, 'user_name' : user.username,'formset': all_formsets, 'open_formset_management': open_formset_management, 'choice_formset_management': choice_formset_management}
         return render(request, 'eventSystem/rsvp_event.html', context)
+
+@login_required
+def view_event_responses_vendor(request, event): # owner can view all responses, vendors can view only responses marked visible to them
+    if not user_vendor_for_event(request, event):
+        return HttpResponse(content="Sorry, you are not a vendor for event %s"%event.eventname, status=401, reason="Unauthorized")
+    # User is now known to be vendor of event
+    # Retrieve set of questions visible to vendor
+    user = User.objects.filter(username=request.user.username)[0]
+    event = Event.objects.filter(eventname=event)[0]
+    visible_qns = user.visible_to.all().filter(event_for=event)
+    qn_data = [] # list of (qn, [(choices, choice_counts),], open_response_list) tuples
+    for visible_qn in visible_qns :
+        qn_choices = visible_qn.choice_set.all().order_by('pk')
+        qn_open_response_list = visible_qn.openresponse_set.all().order_by('pk')
+        qn_choice_counts = [len(choice.choices.all()) for choice in qn_choices]
+        qn_choice_tuples = [(qn_choices[index], qn_choice_counts[index]) for index in range(len(qn_choices))]
+        #qn_data.append((visible_qn, (qn_choices, qn_choice_counts), qn_open_response_list))
+        qn_data.append((visible_qn, qn_choice_tuples, qn_open_response_list))   
+    print("Info tuple : " + str(qn_data))
+          
+    if request.method == "POST":
+        return redirect(view_event_responses_vendor, event=event) # TEMP
+
+    else:
+        context = {'qn_data': qn_data, 'event_name' : event.eventname, 'event_date' : event.date, 'event_start' : event.start_time, 'event_end': event.end_time, 'user_name' : user.username}
+        return render(request, 'eventSystem/view_event_responses_vendor.html', context=context)
+    
+@login_required
+def view_event_responses_owner(request, event):
+    if not user_owns_event(request, event):
+        return HttpResponse(content="Sorry, you are not the owner of event %s"%event.eventname, status=401, reason="Unauthorized")
+    return HttpResponse(content="Coming Soon!", status=200)
+    
     
 @login_required    
 def add_qn_new_event(request):

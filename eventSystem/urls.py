@@ -19,5 +19,6 @@ urlpatterns = [
     #url(r'^events/(?P<eventname>[a-zA-Z0-9_ ]+)/submit_questions/$', views.add_questions, name='add_questions'),
     url(r'^events/(?P<eventname>[a-zA-Z0-9_ ]+)/modify_questions/$', views.modify_questions, name='modify_questions'),
     url(r'^events/rsvp_event/(?P<eventname>[a-zA-Z0-9_ ]+)/$', views.rsvp_event, name='rsvp_event'),
+    url(r'^events/view_event_responses_vendor/(?P<event>[a-zA-Z0-9_ ]+)/$', views.view_event_responses_vendor, name='view_event_responses_vendor'),
     url(r'^add_new_questions/$', views.add_qn_new_event, name='add_qn_new_event')
 ]

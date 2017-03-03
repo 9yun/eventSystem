@@ -165,10 +165,14 @@ class Response(models.Model):
 
 class OpenResponse(Response):
     response_value = models.CharField(max_length = 200, blank = False, default="", error_messages={'required': 'Please answer the question'})
+    def __str__(self):
+        return self.response_value
     
 class ChoiceResponse(Response):
-    response_value = models.ManyToManyField(Choice, related_name='choices') # Use ManyToManyField instead of ForeignKey to allow multiple responses?
-    choice_for = models.ForeignKey(Choice, on_delete = models.CASCADE)
+    response_value = models.ManyToManyField(Choice, related_name='choices') # Use ManyToManyField instead of ForeignKey to allow multiple choices?
+    #choice_for = models.ForeignKey(Choice, on_delete = models.CASCADE)
+    def __str__(self):
+        return self.response_value
     
 # Form Classes
 class MyModelMultipleChoiceField(forms.ModelMultipleChoiceField):

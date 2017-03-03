@@ -1,0 +1,32 @@
+<html>
+  <head style='margin:auto; width:50%; text-align:center;'>
+    <title>Event | {{ event_name }} | eventSystem</title>
+    <h1>Event Name: {{ event_name }}</h1>
+    <h3>Date & Time: {{ event_date }} from {{ event_start }} to {{ event_end }}</h3>
+  </head>
+  <body>
+
+    {% for qn, choice_info, open_responses in qn_data %}
+    <div>
+      <p>Q: {{ qn.qn_text }}</p>
+      {% if choice_info %}
+        {% for choice, choice_count in choice_info %}
+          <li>{{ choice.choice_text }} : <em>{{ choice_count }}</em></li>
+        {% empty %}
+        <p>This question has no choices. Please contact the event owner and tell him to fix this issue.</p>
+        {% endfor %}
+      {% else %}
+        {% for open_response in open_responses %}
+          <p>A: {{ open_response }}</p> 
+        {% empty %}
+        <p>No responses received yet for this question</p>
+        {% endfor%}
+      {% endif %}
+    </div>  
+    {% empty %}
+    <p>Sorry, no questions have been made visible to you.</p>
+    {% endfor %}
+    
+    <p>Back <a href="{% url 'user_home' user_name %}">home</a></p>
+  </body>
+  </html>
