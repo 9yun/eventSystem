@@ -38,6 +38,9 @@
 	{% endfor %}
       </div>
       {% endif %}
+      {% if show_plus_one_link %}
+      <p>Add/Edit answers for a <a href="{% url 'rsvp_event' eventname=event_name plus_one=1 %}">plus-one</a></p>
+      {% endif %}
     <p><a href="{% url 'user_home' user_name %}">Back to home</a></p>
   </body>
 </html>

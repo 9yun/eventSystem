@@ -227,6 +227,7 @@ def modify_questions(request, eventname):
     if not user_owns_event(request, eventname):
         return HttpResponse(content="Sorry, only owners can modify questions", status=401, reason="Unauthorized")
     event = Event.objects.filter(eventname = eventname)[0]# Can assume at this point that event exists in DB, since checks were made above for 404 
+    user = User.objects.filter(username=request.user.username)[0]
     event_name = event.eventname
     date = event.date
     start = event.start_time
@@ -246,6 +247,7 @@ def modify_questions(request, eventname):
     c_formsets = [choice_formset(queryset = initial_choices_forms[index], prefix = 'choices-' + str(index)) for index in range(len(questions))]
     all_formsets = [(formset[qn_index], c_formsets[qn_index]) for qn_index in range(len(formset))]
     formset_management = formset.management_form
+
     
     if request.method == "POST":
 
@@ -323,15 +325,38 @@ def modify_event(request, eventname):
         return render(request, 'eventSystem/modify_event.html', context)
 
 @login_required
-def rsvp_event(request, eventname): # Can be used for both adding and updating responses
+def rsvp_event(request, eventname, plus_one): # Can be used for both adding and updating responses
     if not user_guest_for_event(request, eventname):
         return HttpResponse(content="Sorry, you are not invited to this event.", status = 401, reason = "Unauthorized")
     # We now know user is invited
     user = User.objects.filter(username=request.user.username)[0]
     event = Event.objects.filter(eventname=eventname)[0]
     # Construct formset for responses with user's initial responses for this event
+
+
     current_user_openresponses = user.openresponse_set.all().filter(qn_for__event_for=event).order_by('pk') # OpenResponses filled by user for this event, in chronological order (Switch to qn order later if possible)
     current_user_choiceresponses = user.choiceresponse_set.all().filter(qn_for__event_for=event).order_by('pk') # Same, but for ChoiceResponses
+
+
+    if plus_one == '1':
+        print("This is a plus-one response!")
+        plus_one = True
+    else :
+        print("This is not a plus-one response!")
+        plus_one = False
+    if plus_one :
+        current_user_openresponses = current_user_openresponses.filter(for_plus_one=True).order_by('pk')
+        current_user_choiceresponses = current_user_choiceresponses.filter(for_plus_one=True).order_by('pk')
+    
+    '''
+    show_plus_one_link = True if event.allows_plus_one else False  
+    if plus_one : # 
+        current_user_openresponses = current_user_openresponses.filter(for_plus_one = True)
+    '''
+    show_plus_one_link = False
+    if event.allow_plus_ones and not plus_one:
+        show_plus_one_link = True
+        
     openresponse_formset_creator = modelformset_factory(OpenResponse, fields = ('response_value',), extra=0)
     openresponse_formset = openresponse_formset_creator(queryset = current_user_openresponses, prefix = 'open')
     choiceresponse_formset_creator = modelformset_factory(ChoiceResponse, fields= ('response_value',), extra=0)
@@ -488,6 +513,7 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
                     #new_open_response.qn_for = openresponse_qns[open_response_form_index]
                     new_open_response.qn_for = usable_open_qns[open_response_form_index]
                     #print("Saving new open response %s"%new_open_response.response_value)
+                    new_open_response.for_plus_one = plus_one
                     new_open_response.save()
                     print("About to commit new open response to db")
                     open_response_form.save_m2m()
@@ -506,6 +532,7 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
                     new_choice_response.user_from = user
                     #new_choice_response.qn_for = choiceresponse_qns[choice_response_form_index]
                     new_choice_response.qn_for = usable_choice_qns[choice_response_form_index]
+                    new_choice_response.for_plus_one = plus_one
                     new_choice_response.save()
                     print("About to commit new choice response to db")
                     choice_response_form.save_m2m()
@@ -518,7 +545,7 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
             return redirect(rsvp_event, eventname)
     else:
         #context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'formset': all_formsets, 'formset_management': formset_management}
-        context = {'event_name': event.eventname, 'event_date': event.date, 'event_start': event.start_time, 'event_end': event.end_time, 'user_name' : user.username,'formset': all_formsets, 'open_formset_management': open_formset_management, 'choice_formset_management': choice_formset_management, 'finalized_qns': finalized_qns}
+        context = {'event_name': event.eventname, 'event_date': event.date, 'event_start': event.start_time, 'event_end': event.end_time, 'user_name' : user.username,'formset': all_formsets, 'open_formset_management': open_formset_management, 'choice_formset_management': choice_formset_management, 'finalized_qns': finalized_qns, 'show_plus_one_link': show_plus_one_link}
         return render(request, 'eventSystem/rsvp_event.html', context)
 
 @login_required
@@ -672,3 +699,8 @@ def user_guest_for_event(request, eventname):
     event = eventSet[0]
     user = User.objects.filter(username=request.user.username)[0]
     return event in user.guests.all()
+
+'''
+def mult_args(request, x, y) :
+    return HttpResponse(content = "You said " + x + " and " + y, status=200)
+'''
