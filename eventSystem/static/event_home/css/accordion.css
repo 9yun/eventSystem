@@ -1,5 +1,11 @@
 /*http://stackoverflow.com/questions/2756751/jquery-ui-accordion-css*/
 
+.ui-widget-content {
+    background: #e1f7e1;
+    max-width: 800px;
+    margin: auto;
+}
+
 .ui-state-hover,
 .ui-widget-content .ui-state-hover,
 .ui-widget-header .ui-state-hover,
@@ -8,7 +14,7 @@
 .ui-widget-header .ui-state-focus {
     border: 1px solid #999999/*{borderColorHover}*/
     ;
-    background: #dadada/*{bgColorHover}*/
+    background: #88cc88/*{bgColorHover}*/
     url(images/ui-bg_glass_75_dadada_1x400.png)/*{bgImgUrlHover}*/
     50%/*{bgHoverXPos}*/
     50%/*{bgHoverYPos}*/
@@ -34,7 +40,7 @@
 .ui-widget-header .ui-state-active {
     border: 1px solid #aaaaaa/*{borderColorActive}*/
     ;
-    background: #4CAF50/*{bgColorActive}*/
+    background: #2d882d/*{bgColorActive}*/
     url(images/ui-bg_glass_65_ffffff_1x400.png)/*{bgImgUrlActive}*/
     50%/*{bgActiveXPos}*/
     50%/*{bgActiveYPos}*/
@@ -66,8 +72,6 @@
     /* support: IE7 */
     border-top: 1px solid #cccccc;
     border-bottom: 1px solid #cccccc;
-    border-top-left-radius: 30px;
-    border-bottom-right-radius: 30px;
 }
 
 .ui-accordion .ui-accordion-header :hover {
@@ -75,7 +79,7 @@
 }
 
 .ui-accordion-header-collapsed {
-    background: #a8f79b;
+    background: #8ad88a;
 }
 
 
