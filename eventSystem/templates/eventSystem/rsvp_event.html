@@ -23,6 +23,21 @@
 	{% endfor %}
 	<button type="submit">Submit Modifications</button>
       </form>
+      {% if finalized_qns %}
+      <div id="finalized_questions">
+	<p>The following questions have been finalized and can no longer be edited</p>
+	{% for finalized_qn, finalized_openresponse, finalized_choiceresponse in finalized_qns %}
+	<div>
+	  <div>{{ finalized_qn.qn_text }}</div>
+	  {% if finalized_choiceresponse %}
+	  <div>{{ finalized_choiceresponse }}</div>
+	  {% else %}
+	  <div>{{ finalized_openresponse }}</div>
+	  {% endif %}
+	</div>
+	{% endfor %}
+      </div>
+      {% endif %}
     <p><a href="{% url 'user_home' user_name %}">Back to home</a></p>
   </body>
 </html>

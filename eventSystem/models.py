@@ -50,7 +50,8 @@ class Event(models.Model):
     owners = models.ManyToManyField(User, related_name="owners")
     vendors = models.ManyToManyField(User, related_name="vendors")
     guests = models.ManyToManyField(User, related_name="guests")
-    plus_ones = models.BooleanField(default = False)
+    allow_plus_ones = models.BooleanField(default = False)
+    plus_ones = models.ManyToManyField(User, related_name="plus_ones")
 
     objects = EventManager()
 
@@ -195,10 +196,10 @@ class EventForm(ModelForm):
     owners = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
     vendors = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
     guests = MyModelMultipleChoiceField(queryset = User.objects.all(), widget = CheckboxSelectMultiple(), required = False)
-    plus_ones = forms.BooleanField(help_text = "Plus Ones?", required=False)
+    allow_plus_ones = forms.BooleanField(help_text = "Plus Ones?", required=False)
     class Meta:
         model = Event
-        fields = ['eventname', 'date', 'start_time', 'end_time', 'owners', 'vendors', 'guests', 'plus_ones'] # TO-DO: Add questions... OR, can be done with AJAX later on
+        fields = ['eventname', 'date', 'start_time', 'end_time', 'owners', 'vendors', 'guests', 'allow_plus_ones'] # TO-DO: Add questions... OR, can be done with AJAX later on
 
 class VisibleToVendorField(forms.ModelMultipleChoiceField):
     def __init__(self, *args, **kwargs):

@@ -341,8 +341,9 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
     openresponse_qns = [] # Used for setting of qn_for fields
     choiceresponse_qns = []
     choiceresponse_choices = []
-    
-    if len(current_user_choiceresponses) > 0 or len(current_user_openresponses) > 0: # submissions are only allowed for all event qns at a time, so this means user is modifying his responses
+
+    if len(current_user_choiceresponses) > 0 or len(current_user_openresponses) > 0: # submissions are only allowed for all event qns at a time, so this means user is modifying
+         
         update = True
         for event_qn_index in range(len(event_questions)):
             event_qn = event_questions[event_qn_index]
@@ -403,10 +404,51 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
     print("Choice response questions: " + str(choiceresponse_qns))
     print("Open response questions: " + str(openresponse_qns))
     [print("Choices for choiceqn: " + str(choices)) for choices in choiceresponse_choices]
-        
+
+    # Apply filter of finalized questions
+    #event_unfinalized_questions = event_questions.filter(finalized=False).order_by('pk')
+    #event_finalized_questions = event_questions.filter(finalized=True).order_by('pk')
+    usable_formsets = []
+    finalized_qns = []
+    usable_open_qns = []
+    usable_choice_qns = []
+    for qn_index in range(len(all_formsets)) :
+        if all_formsets[qn_index][0].finalized :
+            finalized_qns.append(all_formsets[qn_index])
+        else :
+            usable_formsets.append(all_formsets[qn_index])
+            if all_formsets[qn_index][1] == None:
+                usable_choice_qns.append(all_formsets[qn_index][0])
+            else:
+                usable_open_qns.append(all_formsets[qn_index][0])
+    all_formsets = usable_formsets
+    print("Usable formsets: " + str(usable_formsets))
+    print("finalized formsets: " + str(finalized_qns))
+
+    active_open_set = current_user_openresponses.filter(qn_for__finalized=False).order_by('pk')
+    active_choice_set = current_user_choiceresponses.filter(qn_for__finalized=False).order_by('pk')
+
+    openresponse_formset_creator.extra = len(usable_open_qns) - len(active_open_set)
+    openresponse_formset = openresponse_formset_creator(queryset = active_open_set, prefix = 'open')
+
+    choiceresponse_formset_creator.extra = len(usable_choice_qns) - len(active_choice_set)
+    choiceresponse_formset = choiceresponse_formset_creator(queryset = active_choice_set, prefix = 'choice')
+
+    open_formset_management = openresponse_formset.management_form
+    choice_formset_management = choiceresponse_formset.management_form
+    '''
+    openresponse_formset_creator = modelformset_factory(OpenResponse, fields = ('response_value',), extra=0)
+    openresponse_formset = openresponse_formset_creator(queryset = current_user_openresponses, prefix = 'open')
+    choiceresponse_formset_creator = modelformset_factory(ChoiceResponse, fields= ('response_value',), extra=0)
+    choiceresponse_formset = choiceresponse_formset_creator(queryset = current_user_choiceresponses, prefix = 'choice')
+
+    '''
     if request.method == 'POST' :
         # Validate open responses
-        submitted_open_responses = openresponse_formset_creator(request.POST, initial=current_user_openresponses, prefix='open')
+        #submitted_open_responses = openresponse_formset_creator(request.POST, initial=current_user_openresponses, prefix='open')
+        print("POST BODY: " + str(request.POST))
+        submitted_open_responses = openresponse_formset_creator(request.POST, initial=active_open_set, prefix='open') 
+        print("Length of submitted open responses: " + str(len(submitted_open_responses)))
         if submitted_open_responses.is_valid() :
             print("Open responses are valid!")
             if update :
@@ -415,12 +457,13 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
                 # now for choice responses
                 #for choice_question_index in range(len(choiceresponse_formsets)):
 
-                submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial=current_user_choiceresponses, prefix='choice')
-                #print("Current length of queryset for validating form of choice responses: " + str(len(submitted_choice_responses[0].fields['response_value'].queryset)))
+                #submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial=current_user_choiceresponses, prefix='choice')
+                submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial=active_choice_set, prefix='choice')
 
                 for submitted_choice_response_index in range(len(submitted_choice_responses)):
                     submitted_choice_response_form = submitted_choice_responses[submitted_choice_response_index]
-                    submitted_choice_response_form.fields['response_value'].queryset = choiceresponse_choices[submitted_choice_response_index]
+                    #submitted_choice_response_form.fields['response_value'].queryset = choiceresponse_choices[submitted_choice_response_index]
+                    submitted_choice_response_form.fields['response_value'].queryset = usable_choice_qns[submitted_choice_response_index].choice_set.all().order_by('pk')
                     print("Current length of queryset for validating form of choice responses: " + str(len(submitted_choice_response_form.fields['response_value'].queryset))) 
                 
                 if submitted_choice_responses.is_valid() :
@@ -439,15 +482,17 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
                     open_response_form = submitted_open_responses[open_response_form_index]
                     new_open_response = open_response_form.save(commit=False)
                     new_open_response.user_from = user
-                    new_open_response.qn_for = openresponse_qns[open_response_form_index]
-                    print("Saving new open response %s"%new_open_response.response_value)
+                    #new_open_response.qn_for = openresponse_qns[open_response_form_index]
+                    new_open_response.qn_for = usable_open_qns[open_response_form_index]
+                    #print("Saving new open response %s"%new_open_response.response_value)
                     new_open_response.save()
                     print("About to commit new open response to db")
                     open_response_form.save_m2m()
                 print("Done saving all new open responses")
                 # now for choice responses
                 #for choice_question_index in range(len(choiceresponse_formsets)):
-                submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial=current_user_choiceresponses, prefix='choice')
+                #submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial=current_user_choiceresponses, prefix='choice')
+                submitted_choice_responses = choiceresponse_formset_creator(request.POST, initial=active_choice_set, prefix='choice')
                 if not submitted_choice_responses.is_valid() :
                     print("Errors in choice responses")
                     [print(choice_response_form.errors) for choice_response_form in submitted_choice_responses]
@@ -456,8 +501,8 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
                     choice_response_form = submitted_choice_responses[choice_response_form_index]
                     new_choice_response = choice_response_form.save(commit=False)
                     new_choice_response.user_from = user
-                    new_choice_response.qn_for = choiceresponse_qns[choice_response_form_index]
-                    
+                    #new_choice_response.qn_for = choiceresponse_qns[choice_response_form_index]
+                    new_choice_response.qn_for = usable_choice_qns[choice_response_form_index]
                     new_choice_response.save()
                     print("About to commit new choice response to db")
                     choice_response_form.save_m2m()
@@ -470,7 +515,7 @@ def rsvp_event(request, eventname): # Can be used for both adding and updating r
             return redirect(rsvp_event, eventname)
     else:
         #context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'formset': all_formsets, 'formset_management': formset_management}
-        context = {'event_name': event.eventname, 'event_date': event.date, 'event_start': event.start_time, 'event_end': event.end_time, 'user_name' : user.username,'formset': all_formsets, 'open_formset_management': open_formset_management, 'choice_formset_management': choice_formset_management}
+        context = {'event_name': event.eventname, 'event_date': event.date, 'event_start': event.start_time, 'event_end': event.end_time, 'user_name' : user.username,'formset': all_formsets, 'open_formset_management': open_formset_management, 'choice_formset_management': choice_formset_management, 'finalized_qns': finalized_qns}
         return render(request, 'eventSystem/rsvp_event.html', context)
 
 @login_required
