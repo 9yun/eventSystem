@@ -5,8 +5,10 @@
     <h3>Date & Time: {{ event_date }} from {{ event_start }} to {{ event_end }}</h3>
   </head>
   <body>
-
-    {% for qn, choice_info, open_responses in qn_data %}
+    <form method="post">
+      {% csrf_token %}
+      {{ finalize_formset.management_form }}
+      {% for qn, choice_info, open_responses, finalize_form in qn_data %}
     <div>
       <p>Q: {{ qn.qn_text }}</p>
       {% if choice_info %}
@@ -20,13 +22,15 @@
           <p>A: {{ open_response }}</p> 
         {% empty %}
         <p>No responses received yet for this question</p>
-        {% endfor%}
-      {% endif %}
+	{% endfor%}
+	{% endif %}
+	{{ finalize_form }}
     </div>  
     {% empty %}
     <p>Sorry, no questions have been made visible to you.</p>
     {% endfor %}
-    
+      <button type="submit">Finalize selected questions</button>
+    </form>
     <p>Back <a href="{% url 'user_home' user_name %}">home</a></p>
   </body>
   </html>

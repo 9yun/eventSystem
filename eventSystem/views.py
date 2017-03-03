@@ -15,7 +15,7 @@ from django.utils import timezone
 
 #from django.forms import formset_factory
 from django.forms import modelform_factory, modelformset_factory
-from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm, VisibleToVendorField
+from .models import User, Event, Question, Choice, Response, OpenResponse, ChoiceResponse, EventForm, QuestionForm, ChoiceForm, OpenResponseForm, ChoiceResponseForm, VisibleToVendorField, FinalizeForm
 
 import json
 from django.http import JsonResponse
@@ -481,22 +481,37 @@ def view_event_responses_vendor(request, event): # owner can view all responses,
     # Retrieve set of questions visible to vendor
     user = User.objects.filter(username=request.user.username)[0]
     event = Event.objects.filter(eventname=event)[0]
-    visible_qns = user.visible_to.all().filter(event_for=event)
+    visible_qns = user.visible_to.all().filter(event_for=event).order_by('pk')
     qn_data = [] # list of (qn, [(choices, choice_counts),], open_response_list) tuples
-    for visible_qn in visible_qns :
+    finalize_formset_creator = modelformset_factory(Question, fields=('finalized',), extra = 0)
+    finalize_formset = finalize_formset_creator(queryset = visible_qns)
+    '''
+    modelformset_factory(OpenResponse, fields = ('response_value',), extra=0)
+    openresponse_formset = openresponse_formset_creator(queryset = current_user_openresponses, prefix = 'open')
+    '''
+    for visible_qn_index in range(len(visible_qns)) :
+        visible_qn = visible_qns[visible_qn_index]
         qn_choices = visible_qn.choice_set.all().order_by('pk')
         qn_open_response_list = visible_qn.openresponse_set.all().order_by('pk')
         qn_choice_counts = [len(choice.choices.all()) for choice in qn_choices]
         qn_choice_tuples = [(qn_choices[index], qn_choice_counts[index]) for index in range(len(qn_choices))]
         #qn_data.append((visible_qn, (qn_choices, qn_choice_counts), qn_open_response_list))
-        qn_data.append((visible_qn, qn_choice_tuples, qn_open_response_list))   
+        qn_data.append((visible_qn, qn_choice_tuples, qn_open_response_list, finalize_formset[visible_qn_index]))   
     print("Info tuple : " + str(qn_data))
           
     if request.method == "POST":
-        return redirect(view_event_responses_vendor, event=event) # TEMP
+        finalized_formset = finalize_formset_creator(request.POST, initial=visible_qns)
+        if finalized_formset.is_valid() :
+            print("Finalization changed")
+            modified_qns = finalized_formset.save()
+            return redirect(user_home, username=user.username)
+        print("Errors finalizing: ")
+        [print(finalize_form.errors) for finalize_form in finalized_formset]
+        # Error message
+        return redirect(view_event_responses_vendor, event=event)
 
     else:
-        context = {'qn_data': qn_data, 'event_name' : event.eventname, 'event_date' : event.date, 'event_start' : event.start_time, 'event_end': event.end_time, 'user_name' : user.username}
+        context = {'qn_data': qn_data, 'event_name' : event.eventname, 'event_date' : event.date, 'event_start' : event.start_time, 'event_end': event.end_time, 'user_name' : user.username, 'finalize_formset' : finalize_formset}
         return render(request, 'eventSystem/view_event_responses_vendor.html', context=context)
     
 @login_required

@@ -95,7 +95,8 @@ class Event(models.Model):
 class Question(models.Model):
     qn_text = models.CharField(max_length = 200)
     event_for = models.ForeignKey(Event, on_delete = models.CASCADE)
-
+    finalized = models.BooleanField(default = False)
+    
     def __str__(self):
         return self.qn_text
     
@@ -112,7 +113,7 @@ class Question(models.Model):
         return {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}
 
     visible_to = models.ManyToManyField(User, related_name="visible_to")
-    
+
     def set_visible_to(self, vendors): # rewrites the entire visible_to set, implicitly ignores any passed in vendor who is not registered as a vendor of the event
         current_visible_to = self.visible_to.all()
         event_vendors = self.get_vendors_set()
@@ -121,7 +122,10 @@ class Question(models.Model):
                 self.visible_to.add(vendor)
             elif vendor not in vendors and vendor in current_visible_to:
                 self.visible_to.remove(vendor)
-    
+
+    def finalize(self):
+        self.finalized = True
+                
     def safe_modify_text(self, text):
         sibling_choices = Choice.objects.filter(qn_for=self.qn_for)
         sibling_choices_texts = [choice.choice_text for choice in sibling_choices]
@@ -232,7 +236,12 @@ class ChoiceResponseForm(ModelForm):
     class Meta:
         model = ChoiceResponse
         fields = ['response_value']    
-        
+
+class FinalizeForm(ModelForm):
+    finalized = forms.BooleanField(required = False)
+    class Meta:
+        model = Question
+        fields = ['finalized']
 '''
 class SingleChoiceResponseForm(ModelForm):
     #response_value = forms.ChoiceField(choices = [])
