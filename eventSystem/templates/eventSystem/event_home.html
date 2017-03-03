@@ -1,45 +1,91 @@
 <html>
-  <head style='margin:auto; width:50%; text-align:center;'>
+
+<head>
+  <title>Events Unlimited | {{ event_name }}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static "event_home/css/event_home.css" %}"> {% load static %}
+  <link rel="stylesheet" href="{% static "event_home/css/accordion.css" %}">
+  <link href='http://fonts.googleapis.com/css?family=Lobster+Two' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Berkshire+Swash' rel='stylesheet' type='text/css'>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+<!--<head style='margin:auto; width:50%; text-align:center;'>
     <title>Event | {{ event_name }} | eventSystem</title>
     <h1>Event Name: {{ event_name }}</h1>
     <h3>Date & Time: {{ event_date }} from {{ event_start }} to {{ event_end }}</h3>
-  </head>
-  <body>
-    <p>Owners:</p>
-    <ul>
+  </head>-->
+
+<body>
+  <div class="title">
+    <h1>Event Name: {{ event_name }}</h1>
+  </div>
+  <div style="text-align: center">
+    <label class="fancy_text">When:</label><br>
+    <label class="fancy_text_small"><i>{{ event_date }}</i></label><br>
+    <label class="fancy_text">Time:</label><br>
+    <label class="fancy_text_small"><i>{{ event_start }} - {{ event_end }}</i></label>
+  </div>
+  <hr style="max-width: 800px;">
+  <div id="accordion" style="text-align: center">
+    <h3 class="fancy_text_accordion">Owners:</h3>
+    <div>
       {% for owner in event_owners %}
-      <li><a href="{% url 'user_home' owner.username %}">{{ owner.username }}</a></li>
-      {% endfor %}
-    </ul>
-
-    {% if has_vendors%}
-    <p>Vendors:</p>
-    <ul>
+      <a href="{% url 'user_home' owner.username %}">
+        <label class="fancy_text_small">{{ owner.username }}</label></a><br> {% endfor %}
+    </div>
+    {% if has_vendors %}
+    <h3 class="fancy_text_accordion">Vendors:</h3>
+    <div>
       {% for vendor in event_vendors %}
-      <li><a href="{% url 'user_home' vendor.username %}">{{ vendor.username }}</a></li>
-      {% endfor %}
-    </ul>
+      <a href="{% url 'user_home' vendor.username %}">
+        <label class="fancy_text_small">{{ vendor.username }}</label></a><br> {% endfor %}
+    </div>
     {% else %}
-    <p>This event has no vendors</p>
-    {% endif %}
-
-    {% if has_guests %}
-    <p>Guests:</p>
-    <ul>
-      {% for guest in event_guests %}
-      <li><a href="{% url 'user_home' guest.username %}">{{ guest.username }}</a></li>
-      {% endfor %}
-    </ul>
+    <h3 class="fancy_text_accordion">This event has no vendors</h3>
+    <div></div>
+    {% endif %} {% if has_guests %}
+    <h3 class="fancy_text_accordion">Guest for:</h3>
+    <div>
+      <hr> {% for guest in event_guests %}
+      <a href="{% url 'user_home' guest.username %}">
+        <label class="fancy_text_small">{{ guest.username }}</label></a><br> {% endfor %}
+    </div>
     {% else %}
-    <p>This event has no guests</p>
+    <h3 class="fancy_text_accordion">This event has no guests</h3>
+    <div></div>
     {% endif %}
+  </div>
+  {% if noun == "You" %}
+  <div class="input_container">
+    <form action="{% url 'create_event' %}">
+      <input type="submit" value="Create an Event" class="fancy create_event" />
+    </form>
+    <form action="{%url 'user_logout' %}">
+      <input type="submit" value="Logout" class="fancy logout" />
+    </form>
+  </div>
+  {% endif %}
 
-    <p><a href="{% url 'view_questions' event_name %}">View Questions</a></p>
-    
-    <p><a href="{% url 'add_questions' event_name %}">Add Questions</a></p>
-    
-    <p><a href="{% url 'modify_event' event_name %}">Modify {{ event_name }}</a></p>
+  <script>
+    $("#accordion").accordion();
+    $("#accordion div").css({
+      'height': 'auto'
+    });
+  </script>
+  <hr style="max-width: 800px;">
+  <div class="input_container">
+    <form action="{% url 'view_questions' event_name %}">
+      <input type="submit" value="View Questions" class="fancy view_questions" />
+    </form>
+    <form action="{% url 'add_questions' event_name %}">
+      <input type="submit" value="Add Questions" class="fancy add_questions" />
+    </form>
+    <form action="{% url 'modify_event' event_name %}">
+      <input type="submit" value="Modify {{ event_name }}" class="fancy modify_event" />
+    </form>
+  </div>
+</body>
 
-
-  </body>
-  </html>
+</html>
