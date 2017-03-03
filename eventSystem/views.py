@@ -273,6 +273,9 @@ def modify_questions(request, eventname):
                 for modified_choice_index in range(len(submitted_choice_formset)):
                     modified_choice = submitted_choice_formset[modified_choice_index]
                     modified_choice.qn_for = questions[choice_formset_index]
+
+                    
+                    
                     modified_choice.save() # save back to update foreign-key relations with qn object
                 print("Saved choices for question " + str(choice_formset_index))
             print("Saving of modified choices succeeded!")

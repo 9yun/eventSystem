@@ -102,14 +102,17 @@ class Question(models.Model):
         return self.qn_text
     
     def get_responses(self):
-        return self.response_set.all()
+        responder_emails = list(map(lambda x: x.user_from.email, self.openresponse_set.all()))
+        responder_emails += list(map(lambda x: x.user_from.email, self.choiceresponse_set.all()))
+        return list(set(responder_emails))
 
+    '''
     def get_responders(self): # Temp, only tracks if a user responded to this question... does not know if user's choice is affected by modifying options to qn
         return [response.user_from for response in self.get_responses()]
-
+    '''
     def get_responder_emails(self): # Called when an extra option is added to the question (only relevant to SingleChoiceQuestion and MCQ?)
-        return [responder.email for responder in self.get_responders()]
-    
+        return self.get_responses()
+        
     def get_vendors_set(self):
         return {'username__in' : list(map(lambda x : x.username, self.event_for.getVendors()))}
 
@@ -146,10 +149,10 @@ class Choice(models.Model): # For creation of question and tracking of response
         return self.choice_text
     
     def getChoosers(self): # helper for below func
-        return self.choiceresponse_set.all()
+        return self.choices.all()        
 
     def getChooserEmails(self): # use this to retrieve responses and therefore users who must be emailed when this choice gets deleted  
-        return [response.user_from.email for response in getChoosers()]
+        return list(set([response.user_from.email for response in self.getChoosers()]))
 
     def safe_modify_text(self, text): # can check that text does not clash with that of other choices for same qn
         sibling_choices = Choice.objects.filter(qn_for=self.qn_for)
