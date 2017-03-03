@@ -36,7 +36,7 @@
     <h3 class="fancy_text_accordion">Vendor for:</h3>
     <div>
       <hr> {% for event in vendor_events %}
-      <a href="{% url 'event_home' event.eventname %}">
+      <a href="{% url 'view_event_responses_vendor' event.eventname %}">
         <label class="event">{{ event.eventname }}</label></a><br>
       <label class="fancy_text">When:</label><br>
       <label class="fancy_text_small"><i>{{ event.date }}</i></label><br>
@@ -51,7 +51,7 @@
     <h3 class="fancy_text_accordion">Guest for:</h3>
     <div>
       <hr> {% for event in guest_events %}
-      <a href="{% url 'event_home' event.eventname %}">
+      <a href="{% url 'rsvp_event' eventname=event.eventname plus_one=0 %}">
         <label class="event">{{ event.eventname }}</label></a><br>
       <label class="fancy_text">When:</label><br>
       <label class="fancy_text_small"><i>{{ event.date }}</i></label><br>
