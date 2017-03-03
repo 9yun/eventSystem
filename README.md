@@ -46,3 +46,5 @@ Otherwise, navigate to the IP of your remote server:
 ```
 http://[ YOUR SERVER'S IP/ADDRESS ]:8000/eventSystem/login/
 ```
+### Setting up Email
+Open `settings.py` under `events/`. Find the section titled `Email Settings` and fill our your email credentials.
