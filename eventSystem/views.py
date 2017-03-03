@@ -10,6 +10,7 @@ from django.db.utils import IntegrityError
 from django.db.models import DateTimeField
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.mail import send_mail
 
 from django.utils import timezone
 
@@ -270,16 +271,20 @@ def modify_questions(request, eventname):
                     return redirect(modify_questions, eventname=eventname)
                 # Save modified choices of question
                 modified_choices = submitted_choice_formset.save(commit=False)
+                # Send a general email to update
                 print("Length of submitted choices formset: " + str(len(submitted_choice_formset)))
                 print("Length of modified choices: " + str(len(modified_choices)))
+                to_send_email_set = []
                 for modified_choice_index in range(len(submitted_choice_formset)):
                     modified_choice = submitted_choice_formset[modified_choice_index]
                     modified_choice.qn_for = questions[choice_formset_index]
-
-                    
-                    
+                    for email in modified_choice.qn_for.get_responder_emails():
+                        to_send_email_set.append(email)     
                     modified_choice.save() # save back to update foreign-key relations with qn object
                 print("Saved choices for question " + str(choice_formset_index))
+                # Send emails
+                to_send_email_set = set(to_send_email_set)
+                send_mail("Modified Questions for " + eventname, "The questions for " + eventname + " have been modified. Please login to update your responses!","eventSystem-" + eventname + "@eventUnlimited.ece590", list(to_send_email_set))
             print("Saving of modified choices succeeded!")
             return redirect(view_questions, eventname=eventname)
         
