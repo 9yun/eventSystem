@@ -1,1 +1,9 @@
-TBD
+## Event System Dangers
+
+## Precautions
+* Protect against CSRF attacks using the Django CSRF Token
+* Build in Django database command sanitizing
+
+## Dangers
+* Text input fields (such as event names et al.) could be prone to code injection
+ (i.e. JS that could run in a user's browser).
