@@ -180,7 +180,7 @@ class ChoiceResponse(Response):
     response_value = models.ManyToManyField(Choice, related_name='choices') # Use ManyToManyField instead of ForeignKey to allow multiple choices?
     #choice_for = models.ForeignKey(Choice, on_delete = models.CASCADE)
     def __str__(self):
-        return self.response_value
+        return self.response_value.all()[0].choice_text if len(self.response_value.all()) > 0 else None
     
 # Form Classes
 class MyModelMultipleChoiceField(forms.ModelMultipleChoiceField):

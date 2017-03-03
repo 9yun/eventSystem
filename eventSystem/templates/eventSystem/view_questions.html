@@ -29,9 +29,9 @@
   <p>This event has no questions yet.</p>
 {% endif %}  
   
-<p><a href="{% url 'add_questions' event_name %}">Add Questions</a></p>
+<p><a href="{% url 'add_questions' event.pk %}">Add Questions</a></p>
   
-<p><a href="{% url 'modify_questions' event_name %}">Modify Questions</a></p>
+<p><a href="{% url 'modify_questions' event.pk %}">Modify Questions</a></p>
 
 
 </body>

@@ -29,7 +29,7 @@
 	{% endfor %}
 	<button type="submit">Submit Modifications</button>
       </form>
-    <p><a href="{% url 'add_questions' event_name %}">Add New Questions</a></p>
-    <p><a href="{% url 'event_home' event_name %}">Back to {{ event_name }}</a></p>
+    <p><a href="{% url 'add_questions' event.pk %}">Add New Questions</a></p>
+    <p><a href="{% url 'event_home' event.pk %}">Back to {{ event_name }}</a></p>
   </body>
 </html>

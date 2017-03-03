@@ -76,13 +76,13 @@
   </script>
   <hr style="max-width: 800px;">
   <div class="input_container">
-    <form action="{% url 'view_questions' event_name %}">
+    <form action="{% url 'view_questions' event.pk %}">
       <input type="submit" value="View Questions" class="fancy view_questions" />
     </form>
-    <form action="{% url 'add_questions' event_name %}">
+    <form action="{% url 'add_questions' event.pk %}">
       <input type="submit" value="Add Questions" class="fancy add_questions" />
     </form>
-    <form action="{% url 'modify_event' event_name %}">
+    <form action="{% url 'modify_event' event.pk %}">
       <input type="submit" value="Modify {{ event_name }}" class="fancy modify_event" />
     </form>
   </div>

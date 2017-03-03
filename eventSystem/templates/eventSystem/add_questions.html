@@ -22,8 +22,8 @@
       {{ new_qn_form }}
       <button type="submit">Submit</button>
     </form>
-  <p><a href="{% url 'modify_questions' event_name %}">Modify Existing Questions</a></p>
-  <p><a href="{% url 'event_home' event_name %}">Back to {{ event_name }}</a></p>
+  <p><a href="{% url 'modify_questions' event.pk %}">Modify Existing Questions</a></p>
+  <p><a href="{% url 'event_home' event.pk %}">Back to {{ event_name }}</a></p>
 </body>
 
 </html>
