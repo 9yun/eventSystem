@@ -5,6 +5,18 @@
     <title>Event | {{ event_name }} | eventSystem</title>
     <h1>Event Name: {{ event_name }}</h1>
     <h3>Date & Time: {{ event_date }} from {{ event_start }} to {{ event_end }}</h3>
+
+    <style>
+    #id_visible_to {
+      min-width: 300px;
+      min-height: 150px;
+      position: relative;
+      top: 70px;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+    </style>
+
   </head>
 <body>
   {% if has_questions %}
@@ -18,8 +30,8 @@
     <p>This event has no questions so far. Go ahead and create the first ones!</p>
   {% endif %}
     <form method="post">
-      {% csrf_token %}
-      {{ new_qn_form }}
+      {% csrf_token %}> 
+        {{ new_qn_form }}
       <button type="submit">Submit</button>
     </form>
   <p><a href="{% url 'modify_questions' event_name %}">Modify Existing Questions</a></p>
