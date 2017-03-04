@@ -85,6 +85,9 @@
     <form action="{% url 'modify_event' event.pk %}">
       <input type="submit" value="Modify {{ event_name }}" class="fancy modify_event" />
     </form>
+    <form action="{% url 'user_home' user_name %}">
+      <input type="submit" value="Back Home" class="fancy modify_event" />
+    </form>
   </div>
 </body>
 

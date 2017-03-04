@@ -22,5 +22,8 @@
       {% endfor %}
     </div>
     {% endif %}
+    <form action="{% url 'user_home' user.username %}">
+      <input type="submit" value="Back Home"/>
+    </form>
   </body>
 </html>

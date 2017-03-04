@@ -121,7 +121,7 @@ def event_home(request, eventname):
     event_guests = event.getGuests()
     has_vendors = len(event_vendors) > 0
     has_guests = len(event_guests) > 0
-    context = {'event_name' : event.eventname, 'event_date' : event.date, 'event_start' : event.start_time, 'event_end': event.end_time,  'event_owners' : event_owners, 'event_vendors' : event_vendors, 'event_guests' : event_guests, 'has_vendors' : has_vendors, 'has_guests' : has_guests, 'event' : event}
+    context = {'event_name' : event.eventname, 'event_date' : event.date, 'event_start' : event.start_time, 'event_end': event.end_time,  'event_owners' : event_owners, 'event_vendors' : event_vendors, 'event_guests' : event_guests, 'has_vendors' : has_vendors, 'has_guests' : has_guests, 'event' : event, 'user_name': request.user.username}
     
     return render(request, 'eventSystem/event_home.html', context)
 
@@ -173,7 +173,7 @@ def view_questions(request, eventname):
     for index in range(len(questions)):
         qnData.append((questions[index], [choice.choice_text for choice in questions[index].choice_set.all()], [vendor.username for vendor in questions[index].visible_to.all()]))
     #visible_to = [vendor.username for question in questions for vendor in  question.visible_to.all()]
-    context = {'event_name': event_name, 'event_date': date, 'event_start' : start, 'event_end': end, 'event':event, 'questions': qnData, 'has_questions': has_questions}
+    context = {'event_name': event_name, 'event_date': date, 'event_start' : start, 'event_end': end, 'event':event, 'questions': qnData, 'has_questions': has_questions, 'user_name':request.user.username}
     return render(request, 'eventSystem/view_questions.html', context)
 
 @login_required
@@ -557,7 +557,8 @@ def rsvp_event(request, eventname, plus_one): # Can be used for both adding and 
                 print("Errors in choice responses")
                 [print(submitted_choice_response.errors) for submitted_choice_response in submitted_choice_responses] 
                 #return redirect(rsvp_event, eventname) 
-                return redirect(rsvp_event, event.pk)
+                messages.warning(request, "Please ensure that you have answered all questions properly.")
+                return redirect(rsvp_event, eventname=event.pk, plus_one='1' if plus_one else '0')
                 
             else: # need to save user_from, qn_for fields as well as choice_for field for choiceresponses              
                 #new_open_responses = submitted_open_responses.save(commit=False)
@@ -581,7 +582,8 @@ def rsvp_event(request, eventname, plus_one): # Can be used for both adding and 
                 if not submitted_choice_responses.is_valid() :
                     print("Errors in choice responses")
                     [print(choice_response_form.errors) for choice_response_form in submitted_choice_responses]
-                    return redirect(rsvp_event, event.pk)
+                    messages.warning(request, "Please ensure that you have answered all questions properly.")
+                    return redirect(rsvp_event, eventname=event.pk, plus_one='1' if plus_one else '0')
                 for choice_response_form_index in range(len(submitted_choice_responses)) :
                     choice_response_form = submitted_choice_responses[choice_response_form_index]
                     new_choice_response = choice_response_form.save(commit=False)
@@ -598,7 +600,8 @@ def rsvp_event(request, eventname, plus_one): # Can be used for both adding and 
         else: # open responses invalid
             print("Errors in open responses")
             [print(open_response_form.errors) for open_response_form in submitted_open_responses]
-            return redirect(rsvp_event, event.pk)
+            messages.warning(request, "Please ensure that you have answered all questions properly.")
+            return redirect(rsvp_event, eventname=event.pk, plus_one='1' if plus_one else '0')
     else:
         #context = {'event_name': event_name, 'event_date': date, 'event_start': start, 'event_end': end, 'formset': all_formsets, 'formset_management': formset_management}
         context = {'event_name': event.eventname, 'event_date': event.date, 'event_start': event.start_time, 'event_end': event.end_time, 'user_name' : user.username,'formset': all_formsets, 'open_formset_management': open_formset_management, 'choice_formset_management': choice_formset_management, 'finalized_qns': finalized_qns, 'show_plus_one_link': show_plus_one_link, 'event':event}

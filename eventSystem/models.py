@@ -229,7 +229,7 @@ class ChoiceForm(ModelForm):
         fields = ['choice_text']
 
 class OpenResponseForm(ModelForm):
-    response_value = forms.CharField(max_length = 200, help_text = "Please answer the question in under 200 characters")
+    response_value = forms.CharField(max_length = 200, help_text = "Please answer the question in under 200 characters", required = True)
     class Meta:
         model = OpenResponse
         fields = ['response_value']
