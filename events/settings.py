@@ -28,9 +28,9 @@ DEBUG = True
 ALLOWED_HOSTS = ['10.236.48.19', 'colab-sbx-pvt-05.oit.duke.edu', '127.0.0.1']
 
 # Email setup
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'eventSystem_duke'
-EMAIL_HOST_PASSWORD = 'duke_event_system1'
+EMAIL_HOST = ''
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 

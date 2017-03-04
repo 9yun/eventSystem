@@ -48,3 +48,6 @@ http://[ YOUR SERVER'S IP/ADDRESS ]:8000/eventSystem/login/
 ```
 
 ### NOTE : How to set vendor permissions : From user home page, click on one of the events under 'Events Owned By You'. Then, click on 'View Questions.' From there, click on 'Modify Questions'. You can then set permissions on that page.
+
+### Setting up Email
+Open `settings.py` under `events/`. Find the section titled `Email Settings` and fill our your email credentials.
